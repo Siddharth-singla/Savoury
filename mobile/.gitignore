@@ -24,17 +24,18 @@ node_modules/
 *.mobileprovision
 *.keystore
 id_rsa*
-id_ed25519*
 credentials.json
 service-account*.json
 google-services.json
 GoogleService-Info.plist
 
-# Expo & Mobile
+# Expo
 .expo/
 dist/
 web-build/
 expo-env.d.ts
+
+# Native
 .kotlin/
 *.orig.*
 
@@ -56,18 +57,13 @@ Thumbs.db
 .vscode/*
 !.vscode/extensions.json
 .idea/
-*.suo
-*.ntvs*
-*.njsproj
-*.sln
-*.sw?
 
 # Typescript
 *.tsbuildinfo
 
 app-example
 
-# generated native folders
+# Generated native folders
 /ios
 /android
 

@@ -1,0 +1,339 @@
+// ============================================================
+// SmartMess — Prisma Schema (PostgreSQL)
+// ============================================================
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")       // pgBouncer pooler — used at runtime
+  directUrl = env("DIRECT_URL")         // direct connection — used for migrations & introspection
+}
+
+// ------------------------------------------------------------
+// ENUMS
+// ------------------------------------------------------------
+
+enum Role {
+  STUDENT
+  MESS_COMMITTEE
+  WARDEN_ADMIN
+  COUNTER_STAFF
+  SUPER_ADMIN
+}
+
+enum BookingStatus {
+  OPTED_IN   // default state — student will eat this meal
+  OPTED_OUT  // student actively skipped, before cutoff
+  LOCKED     // cutoff passed, status frozen — kitchen + billing now depend on this
+}
+
+enum AttendanceResult {
+  SERVED       // valid scan, meal given
+  DUPLICATE    // student/staff tried to scan an already-served booking
+  OVERRIDE     // staff manually let someone eat without a valid booking (walk-in), logged with reason
+}
+
+enum TransactionType {
+  TOPUP
+  MEAL_DEDUCTION
+  CASHOUT
+  ADJUSTMENT
+}
+
+enum CashoutStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  PAID
+}
+
+
+enum MealSlot {
+  BREAKFAST
+  LUNCH
+  DINNER
+}
+
+// ------------------------------------------------------------
+// CORE ORG STRUCTURE
+// ------------------------------------------------------------
+
+model Hostel {
+  id        String   @id @default(cuid())
+  name      String
+  createdAt DateTime @default(now())
+
+  mess      Mess?
+  users     User[]
+  feePlans  HostelFeePlan[]
+
+  @@map("hostels")
+}
+
+model HostelFeePlan {
+  id            String   @id @default(cuid())
+  hostel        Hostel   @relation(fields: [hostelId], references: [id], onDelete: Cascade)
+  hostelId      String
+  semesterLabel String
+  totalFee      Decimal  @db.Decimal(10, 2)
+  createdAt     DateTime @default(now())
+
+  @@unique([hostelId, semesterLabel])
+  @@map("hostel_fee_plans")
+}
+
+model Mess {
+  id        String   @id @default(cuid())
+  name      String
+  hostel    Hostel   @relation(fields: [hostelId], references: [id], onDelete: Cascade)
+  hostelId  String   @unique   // one mess per hostel for MVP; relax later for multi-mess
+  createdAt DateTime @default(now())
+
+  menus         Menu[]
+
+  @@map("messes")
+}
+
+// ------------------------------------------------------------
+// USERS & AUTH
+// ------------------------------------------------------------
+
+model User {
+  id           String   @id @default(cuid())
+  name         String
+  rollNo       String?  @unique   // null for staff/admin accounts
+  email        String   @unique
+  phone        String?
+  passwordHash String
+  role         Role     @default(STUDENT)
+
+  hostel       Hostel?  @relation(fields: [hostelId], references: [id], onDelete: Cascade)
+  hostelId     String?
+
+
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  bookings         Booking[]
+  scansPerformed   Attendance[]     @relation("ScannedByStaff")
+
+  guestMealsBooked GuestMeal[]
+  feedbackGiven    Feedback[]
+  noticesPosted    Notice[]
+  auditLogs        AuditLog[]
+
+  walletAccounts   WalletAccount[]
+  cashoutRequests  CashoutRequest[]
+  resolvedCashouts CashoutRequest[] @relation("ResolvedBy")
+
+  @@index([hostelId, role])
+  @@map("users")
+}
+
+// ------------------------------------------------------------
+// MENU & MEAL CONFIG
+// ------------------------------------------------------------
+
+model MealType {
+  id               String   @id @default(cuid())
+  slot             MealSlot @unique   // one config row per slot type, globally for MVP
+  displayName      String
+  defaultCutoffTime String  // e.g. "21:00" — cutoff is previous day at this time, config-driven
+  servingStart     String            // e.g. "07:30"
+  servingEnd       String            // e.g. "09:30"
+  perMealRate      Decimal  @db.Decimal(8, 2)  // used both for opt-out credit and guest charge base
+
+  menus       Menu[]
+  bookings    Booking[]
+  guestMeals  GuestMeal[]
+
+  @@map("meal_types")
+}
+
+model Menu {
+  id         String   @id @default(cuid())
+  mess       Mess     @relation(fields: [messId], references: [id], onDelete: Cascade)
+  messId     String
+  mealType   MealType @relation(fields: [mealTypeId], references: [id], onDelete: Cascade)
+  mealTypeId String
+  date       DateTime @db.Date
+  items      Json     // e.g. { "main": ["Rice","Dal"], "side": ["Salad"] } — flexible on purpose
+
+  feedback   Feedback[]
+
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@unique([messId, mealTypeId, date])   // one menu entry per meal per day
+  @@index([date])
+  @@map("menus")
+}
+
+// ------------------------------------------------------------
+// BOOKING — the core scheduling entity
+// ------------------------------------------------------------
+
+model Booking {
+  id         String        @id @default(cuid())
+  student    User          @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  studentId  String
+  mealType   MealType      @relation(fields: [mealTypeId], references: [id], onDelete: Cascade)
+  mealTypeId String
+  date       DateTime      @db.Date
+  status     BookingStatus @default(OPTED_IN)
+
+  lockedAt   DateTime?     // set by the cutoff cron job — null until locked
+  createdAt  DateTime      @default(now())
+  updatedAt  DateTime      @updatedAt
+
+  attendance Attendance?   // one-to-one: a locked booking gets at most one attendance record
+
+  // *** Core integrity rule: a student can only have ONE booking per meal per day ***
+  @@unique([studentId, mealTypeId, date])
+  // fast lookups for: "give me today's headcount for meal X" and "give me this student's history"
+  @@index([mealTypeId, date, status])
+  @@index([studentId, date])
+  @@map("bookings")
+}
+
+// ------------------------------------------------------------
+// ATTENDANCE — QR scan results, source of truth for billing
+// ------------------------------------------------------------
+
+model Attendance {
+  id              String            @id @default(cuid())
+  booking         Booking           @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  bookingId       String            @unique
+  checkedInAt     DateTime          @default(now())
+  checkedInBy     User?             @relation("ScannedByStaff", fields: [checkedInById], references: [id], onDelete: SetNull)
+  checkedInById   String?
+  result          AttendanceResult  @default(SERVED)
+  overrideReason  String?           // required if result == OVERRIDE
+
+  @@index([checkedInAt])
+  @@map("attendance")
+}
+
+
+// ------------------------------------------------------------
+// GUEST MEALS
+// ------------------------------------------------------------
+
+model GuestMeal {
+  id           String   @id @default(cuid())
+  bookedBy     User     @relation(fields: [bookedById], references: [id], onDelete: Cascade)
+  bookedById   String
+  mealType     MealType @relation(fields: [mealTypeId], references: [id], onDelete: Cascade)
+  mealTypeId   String
+  date         DateTime @db.Date
+  guestName    String
+  rateCharged  Decimal  @db.Decimal(8, 2)
+  createdAt    DateTime @default(now())
+
+  @@index([bookedById, date])
+  @@map("guest_meals")
+}
+
+// ------------------------------------------------------------
+// FEEDBACK & NOTICES
+// ------------------------------------------------------------
+
+model Feedback {
+  id        String   @id @default(cuid())
+  student   User     @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  studentId String
+  menu      Menu     @relation(fields: [menuId], references: [id], onDelete: Cascade)
+  menuId    String
+  rating    Int      // 1-5, enforce range in application layer (Postgres CHECK constraint also possible)
+  comment   String?
+  createdAt DateTime @default(now())
+
+  @@unique([studentId, menuId])   // one feedback per student per menu instance
+  @@map("feedback")
+}
+
+model Notice {
+  id         String   @id @default(cuid())
+  postedBy   User     @relation(fields: [postedById], references: [id], onDelete: Cascade)
+  postedById String
+  title      String
+  body       String
+  targetRole Role?    // null = visible to everyone
+  createdAt  DateTime @default(now())
+
+  @@map("notices")
+}
+
+// ------------------------------------------------------------
+// AUDIT LOG — every sensitive/manual action, for accountability
+// ------------------------------------------------------------
+
+model AuditLog {
+  id        String   @id @default(cuid())
+  actor     User     @relation(fields: [actorId], references: [id], onDelete: Cascade)
+  actorId   String
+  action    String   // e.g. "BILL_ADJUSTMENT", "MANUAL_ATTENDANCE_OVERRIDE", "ROLE_CHANGE"
+  entity    String   // e.g. "Bill", "Booking"
+  entityId  String
+  oldValue  Json?
+  newValue  Json?
+  timestamp DateTime @default(now())
+
+  @@index([entity, entityId])
+  @@index([actorId, timestamp])
+  @@map("audit_logs")
+}
+
+// ------------------------------------------------------------
+// WALLET LEDGER
+// ------------------------------------------------------------
+
+model WalletAccount {
+  id            String   @id @default(cuid())
+  student       User     @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  studentId     String
+  balance       Decimal  @default(0) @db.Decimal(10, 2)
+  semesterLabel String
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  transactions  WalletTransaction[]
+
+  @@unique([studentId, semesterLabel])
+  @@map("wallet_accounts")
+}
+
+model WalletTransaction {
+  id                      String          @id @default(cuid())
+  wallet                  WalletAccount   @relation(fields: [walletAccountId], references: [id], onDelete: Cascade)
+  walletAccountId         String
+  type                    TransactionType
+  amount                  Decimal         @db.Decimal(10, 2)
+  relatedAttendanceId     String?         // Weak reference to Attendance
+  relatedCashoutRequestId String?         // Weak reference to CashoutRequest
+  note                    String?
+  createdAt               DateTime        @default(now())
+
+  @@index([walletAccountId, createdAt])
+  @@map("wallet_transactions")
+}
+
+model CashoutRequest {
+  id              String         @id @default(cuid())
+  student         User           @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  studentId       String
+  semesterLabel   String
+  requestedAmount Decimal        @db.Decimal(10, 2)
+  status          CashoutStatus  @default(PENDING)
+  requestedAt     DateTime       @default(now())
+  
+  resolvedAt      DateTime?
+  resolvedBy      User?          @relation("ResolvedBy", fields: [resolvedById], references: [id], onDelete: SetNull)
+  resolvedById    String?
+  resolutionNote  String?
+
+  @@map("cashout_requests")
+}

@@ -53,9 +53,12 @@ pnpm-debug.log*
 .DS_Store
 Thumbs.db
 
-# IDE & Editor
-.vscode/*
-!.vscode/extensions.json
+# IDE, AI Assistants & Editor files
+.vscode/
+.claude/
+.agents/
+CLAUDE.md
+AGENTS.md
 .idea/
 
 # Typescript

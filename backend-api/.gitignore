@@ -38,9 +38,12 @@ pnpm-debug.log*
 coverage/
 .nyc_output/
 
-# Editor & OS
-.vscode/*
-!.vscode/extensions.json
+# Editor, AI Assistants & OS
+.vscode/
+.claude/
+.agents/
+CLAUDE.md
+AGENTS.md
 .idea/
 .DS_Store
 Thumbs.db

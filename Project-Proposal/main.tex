@@ -1,0 +1,766 @@
+% SmartMess Product Requirements Document
+% Formatting modeled after the supplied reference PDF:
+% "Grievance-Resolution System for a Tier-2/3 City"
+%
+% The SmartMess content below is based on the supplied SmartMess_PRD.docx.
+% Replace the metadata placeholders below if course/instructor/author details
+% are required for your submission.
+
+\documentclass[12pt,a4paper]{article}
+
+\usepackage[a4paper,margin=0.78in,top=0.72in,bottom=0.72in]{geometry}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{lmodern}
+\usepackage{microtype}
+\usepackage{enumitem}
+\usepackage{array}
+\usepackage{tabularx}
+\usepackage{booktabs}
+\usepackage{longtable}
+\usepackage{ragged2e}
+\usepackage{amsmath}
+\usepackage{fancyhdr}
+\usepackage[hidelinks]{hyperref}
+
+% ---------- General formatting ----------
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{0.55em}
+\setlength{\emergencystretch}{3em}
+
+\setlist[itemize]{
+    leftmargin=1.35em,
+    itemsep=0.35em,
+    topsep=0.25em,
+    parsep=0pt
+}
+
+\setlist[enumerate]{
+    leftmargin=1.55em,
+    itemsep=0.35em,
+    topsep=0.25em,
+    parsep=0pt
+}
+
+% Match the compact numbered-section appearance of the reference.
+\usepackage{titlesec}
+
+\titleformat{\section}
+  {\normalfont\large\bfseries}
+  {\thesection}
+  {0.65em}
+  {}
+
+\titleformat{\subsection}
+  {\normalfont\normalsize\bfseries}
+  {\thesubsection}
+  {0.65em}
+  {}
+
+\titlespacing*{\section}
+  {0pt}{1.25em}{0.45em}
+
+\titlespacing*{\subsection}
+  {0pt}{0.85em}{0.35em}
+
+% ---------- Header / footer ----------
+\pagestyle{fancy}
+\fancyhf{}
+\renewcommand{\headrulewidth}{0pt}
+\renewcommand{\footrulewidth}{0pt}
+\fancyfoot[C]{\thepage}
+
+% ---------- Helper commands ----------
+\newcommand{\annotation}[1]{\hfill\textit{---#1}}
+
+\newcommand{\priority}[1]{\textbf{[#1]}}
+
+\newcolumntype{Y}{>{\RaggedRight\arraybackslash}X}
+\newcolumntype{L}[1]{>{\RaggedRight\arraybackslash}p{#1}}
+
+% Prevent widows/orphans where possible.
+\widowpenalty=10000
+\clubpenalty=10000
+
+\begin{document}
+
+% ============================================================
+% TITLE AREA
+% ============================================================
+
+\begin{center}
+    {\LARGE\bfseries SmartMess\par}
+    \vspace{0.35em}
+    {\large Product Requirements Document\par}
+    \vspace{0.15em}
+    {\normalsize Consumption-aware mess billing \& operations platform\par}
+
+    % Optional academic metadata. Fill these only if required.
+    % \vspace{1.2em}
+    % Submitted to: [Instructor Name]\\
+    % [Institution Name]\\
+    % [Author Name(s)]\\
+    % [Date]
+\end{center}
+
+\vspace{0.8em}
+
+% ============================================================
+% EXECUTIVE SUMMARY
+% ============================================================
+
+\section*{Executive Summary}
+
+Hostel mess programs typically charge a fixed fee regardless of how many meals a
+student actually eats, while mess operators plan food production from estimated
+rather than confirmed demand. This disconnect causes students to overpay for
+unused meals and causes operators to over- or under-prepare food.
+
+SmartMess is a consumption-aware mess management platform that links what a
+student actually eats to what they are billed and to how much food the mess
+prepares. Students record meal participation and see transparent, usage-based
+charges; administrators get a single system for billing, menus, feedback, and
+demand planning.
+
+The MVP is scoped in three phases --- consumption \& billing transparency,
+administration \& feedback, and food-efficiency analytics --- so that each phase
+validates a distinct hypothesis before the next is built.
+
+% ============================================================
+% 1. PROBLEM & OPPORTUNITY
+% ============================================================
+
+\section{Problem \& Opportunity}
+
+\subsection*{Problem}
+
+Traditional hostel mess systems charge a fixed fee irrespective of actual
+consumption. A student may be away from campus, eating outside, home for the
+weekend, skipping meals, or absent for classes or events --- and still pay the
+same amount.
+
+Mess operators face a mirrored problem: food is prepared against estimated or
+historical demand rather than confirmed meal participation, so low turnout
+produces excess food and unexpected turnout produces shortages.
+
+\subsection*{Core insight}
+
+Both problems trace back to the same root cause --- the mess has no reliable,
+real-time signal of who is actually eating. Fixing consumption visibility fixes
+billing fairness and food planning at the same time.
+
+\subsection*{The Opportunity}
+
+SmartMess replaces two independent, low-visibility processes with one shared
+data model of meal consumption:
+
+\begin{center}
+\begin{tabularx}{0.92\textwidth}{L{0.42\textwidth} Y}
+\toprule
+\textbf{From} & \textbf{To}\\
+\midrule
+Fixed fee, regardless of consumption &
+Meal usage $\rightarrow$ recorded consumption $\rightarrow$ fairer billing\\
+Estimated demand &
+Meal participation $\rightarrow$ better demand estimation $\rightarrow$ less food waste\\
+\bottomrule
+\end{tabularx}
+\end{center}
+
+% ============================================================
+% 2. TARGET USERS & USE CASES
+% ============================================================
+
+\section{Target Users \& Use Cases}
+
+\subsection*{Primary user --- Student}
+
+Students are the main beneficiaries of the platform.
+
+\textbf{Key use cases}
+\begin{itemize}
+    \item View available meals and the daily/weekly menu.
+    \item Indicate whether they will consume a meal, or opt out when absent.
+    \item Track meals consumed and accumulated mess usage/cost.
+    \item Pay based on actual eligible consumption, where the institution supports
+          usage-based billing.
+    \item Provide meal feedback and report food or service problems.
+\end{itemize}
+
+\textbf{Core student value}
+
+Pay more fairly, understand your mess usage, and have a voice in the quality of
+the food you receive.
+
+\subsection*{Secondary user --- Mess Administrator}
+
+Administrators manage the operational and financial side of the mess.
+
+\textbf{Key use cases}
+\begin{itemize}
+    \item Manage student accounts and meal rates/billing rules.
+    \item Monitor meal participation and track actual consumption.
+    \item Manage menus, view feedback, and resolve complaints.
+    \item Monitor expected food demand and food wastage.
+    \item Generate operational and billing reports.
+\end{itemize}
+
+\subsection*{Stakeholder --- Hostel / College Management}
+
+Management needs visibility into total mess consumption, revenue and billing,
+student satisfaction, food wastage, complaint trends, and overall mess
+efficiency.
+
+% ============================================================
+% 3. CURRENT JOURNEY & LANDSCAPE
+% ============================================================
+
+\section{Current Journey \& Landscape}
+
+\subsection*{Student --- current}
+
+\begin{center}
+\begin{tabular}{c}
+Student joins hostel\\
+$\downarrow$\\
+Fixed mess fee charged\\
+$\downarrow$\\
+Student consumes a variable number of meals\\
+$\downarrow$\\
+No direct link between usage and payment\\
+$\downarrow$\\
+Student still bears the fixed cost
+\end{tabular}
+\end{center}
+
+\textbf{Core problem}
+
+The payment model does not reflect actual meal consumption.
+
+\subsection*{Mess operations --- current}
+
+\begin{center}
+\begin{tabular}{c}
+Estimate attending students\\
+$\downarrow$\\
+Prepare food\\
+$\downarrow$\\
+Students arrive\\
+$\downarrow$\\
+Actual demand differs from estimate\\
+$\downarrow$\\
+Excess or insufficient food\\
+$\downarrow$\\
+Wastage or shortage
+\end{tabular}
+\end{center}
+
+The two problems are directly connected: poor consumption visibility leads to
+both inaccurate billing and inaccurate food planning.
+
+\subsection*{Existing alternatives}
+
+\begin{center}
+\small
+\begin{tabularx}{0.98\textwidth}{L{0.23\textwidth} L{0.28\textwidth} Y}
+\toprule
+\textbf{Alternative} & \textbf{Advantage} & \textbf{Limitation}\\
+\midrule
+Fixed mess fee & Simple administration & Student pays regardless of usage\\
+Manual attendance & Low setup cost & Difficult to maintain accurately\\
+Paper registers & Simple record-keeping & Difficult to analyze\\
+WhatsApp & Easy communication & No structured consumption data\\
+Google Forms & Easy feedback collection & Not connected to billing or operations\\
+Excel / Sheets & Flexible & Heavy manual management\\
+\bottomrule
+\end{tabularx}
+\end{center}
+
+% ============================================================
+% 4. PROPOSED SOLUTION
+% ============================================================
+
+\section{Proposed Solution}
+
+\subsection*{Elevator pitch}
+
+SmartMess is a digital mess-management and consumption platform that connects
+what a student eats with how the mess operates. Students view meals, record
+consumption, track usage, and give feedback; administrators manage billing,
+monitor demand, and reduce food wastage.
+
+The long-term goal is to move from a fixed-fee mess model to a fairer,
+consumption-aware model --- students are charged for eligible meals consumed
+rather than a blanket amount --- while the same consumption data helps the mess
+prepare food closer to actual demand.
+
+\subsection*{Top MVP value propositions}
+
+\begin{enumerate}
+    \item \textbf{Fairer meal payments}\\
+    Students pay according to eligible meals consumed instead of automatically
+    paying for unused meals --- a particular benefit for students who travel,
+    skip meals, or are frequently off campus.
+
+    \item \textbf{Food waste reduction}\\
+    The mess gets better visibility into expected meal participation and can
+    make more informed preparation decisions. Less uncertainty leads to better
+    planning and less excess food.
+
+    \item \textbf{Administrative control}\\
+    Administrators get one system to manage students, meals, consumption,
+    billing, menus, feedback, complaints, and reports.
+
+    \item \textbf{Better student experience}\\
+    Students can see what is being served, what they consumed, what they are
+    being charged for, what they have paid, and how to give feedback --- creating
+    transparency between students and mess management.
+\end{enumerate}
+
+\subsection*{Conceptual model}
+
+Student meal selection drives two downstream flows that converge in one admin
+system:
+
+\begin{center}
+\begin{tabularx}{0.92\textwidth}{L{0.43\textwidth} Y}
+\toprule
+\textbf{Consumption $\rightarrow$ Billing} & \textbf{Consumption $\rightarrow$ Planning}\\
+\midrule
+Select meal $\rightarrow$ Meal consumption recorded $\rightarrow$
+Student bill $\rightarrow$ Fairer payment &
+Select meal $\rightarrow$ Meal consumption recorded $\rightarrow$
+Food demand signal $\rightarrow$ Food planning\\
+\bottomrule
+\end{tabularx}
+\end{center}
+
+Both flows feed the admin system, which spans menu management, feedback, and
+analytics --- driving a better overall mess experience.
+
+% ============================================================
+% 5. GOALS & SUCCESS METRICS
+% ============================================================
+
+\section{Goals \& Success Metrics}
+
+The MVP should validate three hypotheses. Targets below are illustrative
+starting points --- replace with figures agreed with the pilot institution
+before launch.
+
+\begin{center}
+\small
+\begin{tabularx}{0.99\textwidth}{L{0.27\textwidth} L{0.37\textwidth} Y}
+\toprule
+\textbf{Hypothesis} & \textbf{How we'll know} & \textbf{Illustrative target}\\
+\midrule
+\textbf{Payment efficiency:}\\
+students can reconcile eligible consumption against charges &
+Share of students who view their billing breakdown at least weekly;
+support tickets about billing disputes &
+$\geq$60\% weekly viewers; $<$5\% of students file a billing dispute per cycle\\
+\addlinespace
+\textbf{Food efficiency:}\\
+participation data improves preparation and cuts waste &
+Variance between expected and actual meal participation; reported food wastage &
+Forecast error reduced by $\geq$20\% vs. current estimation method\\
+\addlinespace
+\textbf{Administrative efficiency:}\\
+manual processes are replaced by one system &
+Admin time spent on billing/consumption reconciliation; adoption of digital
+menu \& feedback tools &
+$\geq$50\% reduction in manual reconciliation time per billing cycle\\
+\bottomrule
+\end{tabularx}
+\end{center}
+
+% ============================================================
+% 6. MVP / FUNCTIONAL REQUIREMENTS
+% ============================================================
+
+\section{MVP / Functional Requirements}
+
+Requirements are organized around the most important Critical User Journeys
+(CUJs) and prioritized:
+
+\begin{itemize}
+    \item \priority{P0} Required for MVP
+    \item \priority{P1} Important for a minimum-delightful product
+    \item \priority{P2} Future enhancement
+\end{itemize}
+
+\subsection{CUJ 1 --- Student manages meal consumption}
+
+\textbf{Goal:} a student can clearly indicate and track the meals they intend
+to consume.
+
+\begin{itemize}
+    \item \priority{P0} Student can log in.
+    \item \priority{P0} Student can view available meals.
+    \item \priority{P0} Student can mark meal participation.
+    \item \priority{P0} Student can opt out of a meal before the configured cutoff.
+    \item \priority{P0} System records eligible meal consumption.
+    \item \priority{P1} Student can view meal history.
+    \item \priority{P1} Student can see total meal usage for a selected period.
+\end{itemize}
+
+\subsection{CUJ 2 --- Student understands and manages payment}
+
+\textbf{Goal:} students have transparency over what they are being charged for.
+
+\begin{itemize}
+    \item \priority{P0} Student can view applicable meal rates.
+    \item \priority{P0} Student can view eligible meals consumed.
+    \item \priority{P0} Student can view the corresponding accumulated amount.
+    \item \priority{P0} Student can view current/unpaid mess balance.
+    \item \priority{P1} Student can view previous billing periods.
+    \item \priority{P1} Student can view a breakdown of charges by meal/date.
+    \item \priority{P2} Online payment integration.
+    \item \priority{P2} Refund/credit handling for eligible skipped meals.
+\end{itemize}
+
+The billing model must be configurable per institution, since colleges differ in
+mess-fee policy.
+
+\subsection{CUJ 3 --- Student checks menu \& gives feedback}
+
+\textbf{Goal:} students know what they are eating and can influence future food
+quality.
+
+\begin{itemize}
+    \item \priority{P0} Student can view the daily menu.
+    \item \priority{P0} Student can view upcoming meals.
+    \item \priority{P1} Student can rate meals.
+    \item \priority{P1} Student can submit written feedback.
+    \item \priority{P1} Student can report food-quality issues.
+    \item \priority{P2} Student can provide category-specific ratings for taste,
+          quality, quantity, and hygiene.
+\end{itemize}
+
+\subsection{CUJ 4 --- Administrator manages billing \& consumption}
+
+\textbf{Goal:} administrators manage consumption-based records without separate
+manual systems.
+
+\begin{itemize}
+    \item \priority{P0} Admin can manage student accounts.
+    \item \priority{P0} Admin can configure meal rates.
+    \item \priority{P0} Admin can view student meal participation.
+    \item \priority{P0} Admin can view recorded consumption.
+    \item \priority{P0} Admin can view student billing information.
+    \item \priority{P0} Admin can generate billing summaries.
+    \item \priority{P1} Admin can adjust eligible records according to
+          institutional policies.
+    \item \priority{P1} Admin can export billing/consumption reports.
+\end{itemize}
+
+\subsection{CUJ 5 --- Administrator manages menu \& feedback}
+
+\textbf{Goal:} administrators control what is served and understand student
+response.
+
+\begin{itemize}
+    \item \priority{P0} Admin can create and publish menus.
+    \item \priority{P0} Admin can edit menus.
+    \item \priority{P0} Admin can view student feedback.
+    \item \priority{P1} Admin can identify poorly rated meals.
+    \item \priority{P1} Admin can identify recurring food complaints.
+    \item \priority{P1} Admin can publish menu changes and announcements.
+\end{itemize}
+
+\subsection{CUJ 6 --- Administrator reduces food wastage}
+
+\textbf{Goal:} use meal participation data to improve food preparation decisions.
+
+\begin{itemize}
+    \item \priority{P0} Admin can view expected meal participation.
+    \item \priority{P0} Admin can compare expected and actual participation.
+    \item \priority{P1} Admin can view meal participation trends.
+    \item \priority{P1} Admin can identify meals with consistently low participation.
+    \item \priority{P2} System estimates expected meal demand using historical data.
+    \item \priority{P2} System tracks food prepared versus food consumed/wasted.
+\end{itemize}
+
+\subsection{CUJ 7 --- Administrative access \& control}
+
+\textbf{Goal:} only authorized personnel can access sensitive student, billing,
+and operational information.
+
+\begin{itemize}
+    \item \priority{P0} Role-based access for students and administrators.
+    \item \priority{P0} Admin can manage authorized users.
+    \item \priority{P0} Students cannot access administrative functions.
+    \item \priority{P0} Billing and consumption data is accessible only to
+          authorized roles.
+    \item \priority{P1} Different administrative permissions can be assigned to
+          different staff members.
+\end{itemize}
+
+\subsection{Non-functional requirements}
+
+Not covered by the CUJs above but required for a production-ready MVP:
+
+\begin{center}
+\small
+\begin{tabularx}{0.99\textwidth}{L{0.22\textwidth} Y}
+\toprule
+\textbf{Area} & \textbf{Requirement}\\
+\midrule
+Performance &
+Meal opt-in/opt-out actions confirm within 2 seconds under normal load;
+menu and billing views load within 3 seconds.\\
+Availability &
+Core student-facing features (view menu, mark participation, view balance)
+available during meal windows with minimal planned downtime.\\
+Data privacy &
+Student billing and consumption records are personal data; access is role-gated
+and logged; retention policy defined per institution.\\
+Auditability &
+Billing calculations and admin adjustments to consumption records are logged
+with actor, timestamp, and reason.\\
+Scalability &
+System supports the largest pilot hostel's population (define target, e.g.
+2,000+ students) without redesign.\\
+Device support &
+Student-facing flows work on mobile web at minimum, given meal-time usage
+patterns.\\
+\bottomrule
+\end{tabularx}
+\end{center}
+
+% ============================================================
+% 7. USER / OBJECT LIFECYCLE
+% ============================================================
+
+\section{User / Object Lifecycle}
+
+\begin{center}
+\small
+\begin{tabularx}{0.98\textwidth}{L{0.20\textwidth} Y}
+\toprule
+\textbf{Object} & \textbf{Lifecycle}\\
+\midrule
+Student & Register $\rightarrow$ Consume meals $\rightarrow$ Track usage
+$\rightarrow$ View charges $\rightarrow$ Continue / Deactivate\\
+Meal & Created $\rightarrow$ Published $\rightarrow$ Student participation
+$\rightarrow$ Consumed $\rightarrow$ Billed $\rightarrow$ Archived\\
+Billing & Meal consumption $\rightarrow$ Charge calculation $\rightarrow$ Bill
+$\rightarrow$ Payment $\rightarrow$ Transaction history\\
+Food & Demand estimate $\rightarrow$ Preparation $\rightarrow$ Consumption
+$\rightarrow$ Remaining food $\rightarrow$ Waste measurement\\
+Feedback & Meal $\rightarrow$ Rating $\rightarrow$ Feedback $\rightarrow$
+Analysis $\rightarrow$ Operational improvement\\
+\bottomrule
+\end{tabularx}
+\end{center}
+
+% ============================================================
+% 8. MVP BOUNDARIES
+% ============================================================
+
+\section{MVP Boundaries}
+
+\subsection*{Included in MVP}
+
+\begin{itemize}
+    \item Student authentication
+    \item Administrative authentication
+    \item Meal/menu management
+    \item Meal participation
+    \item Meal opt-out
+    \item Consumption tracking
+    \item Meal-rate management
+    \item Student billing visibility
+    \item Basic billing calculation
+    \item Feedback and ratings
+    \item Complaint management
+    \item Food-demand visibility
+    \item Basic administrative analytics
+\end{itemize}
+
+\subsection*{Future (out of MVP scope)}
+
+\begin{itemize}
+    \item Online payment gateway
+    \item Automated refunds/credits
+    \item QR-based meal verification
+    \item Advanced demand prediction
+    \item Actual kitchen waste tracking
+    \item Nutrition tracking
+    \item Multi-hostel/multi-mess support
+    \item ERP integration
+\end{itemize}
+
+% ============================================================
+% 9. MVP PHASES & RELEASE CRITERIA
+% ============================================================
+
+\section{MVP Phases \& Release Criteria}
+
+\subsection*{Phase 1 --- Consumption \& Payment Transparency}
+
+\textbf{Scope:} student accounts, menu, meal participation, opt-out,
+consumption tracking, meal rates, student billing view.
+
+\textbf{Objective:} validate whether students value and use consumption-based
+mess transparency.
+
+\textbf{Release criteria:} opt-in/opt-out flows are reliable under real
+meal-window load; billing view matches manual reconciliation for a full cycle;
+no critical data-integrity defects.
+
+\subsection*{Phase 2 --- Administration \& Feedback}
+
+\textbf{Scope:} admin dashboard, billing management, student management,
+feedback, ratings, complaints, menu management.
+
+\textbf{Objective:} validate whether the system provides meaningful
+administrative value.
+
+\textbf{Release criteria:} admins can run a full billing cycle without falling
+back to spreadsheets; feedback and complaint workflows are in active use by
+mess staff.
+
+\subsection*{Phase 3 --- Food Efficiency}
+
+\textbf{Scope:} demand analytics, participation trends, expected vs. actual
+meals, waste indicators, operational reports.
+
+\textbf{Objective:} validate whether consumption data can reduce avoidable food
+preparation and wastage.
+
+\textbf{Release criteria:} forecast-to-actual variance is measurably lower than
+the pre-SmartMess baseline over at least one full term.
+
+% ============================================================
+% 10. ASSUMPTIONS & RISKS
+% ============================================================
+
+\section{Assumptions \& Risks}
+
+\begin{center}
+\small
+\begin{tabularx}{0.99\textwidth}{L{0.36\textwidth} Y}
+\toprule
+\textbf{Assumption / Risk} & \textbf{Mitigation}\\
+\midrule
+Institution is willing and able to move to a consumption-based (vs. flat)
+billing model &
+Keep billing model fully configurable per institution; support flat-fee mode
+as a fallback\\
+Students reliably mark participation before the cutoff, or the signal is
+unreliable &
+Set sensible default cutoffs; consider low-friction defaults (e.g. opt-out
+rather than opt-in) per institution preference\\
+Mess staff adopt digital menu/consumption workflows over paper/WhatsApp habits &
+Phase 2 focuses on replacing existing manual admin workflows one at a time,
+not all at once\\
+Connectivity/device access in hostel dining areas may be inconsistent &
+Design for degraded connectivity; confirm minimum device requirement with
+pilot site\\
+Billing disputes if students forget to opt out and are still charged &
+Transparent, itemized billing view (CUJ 2) and clear cutoff communication\\
+\bottomrule
+\end{tabularx}
+\end{center}
+
+% ============================================================
+% 11. TELEMETRY / MEASUREMENT
+% ============================================================
+
+\section{Telemetry / Measurement}
+
+The system should measure:
+
+\begin{itemize}
+    \item Meals offered
+    \item Meals opted into / opted out
+    \item Meals consumed
+    \item Student billing amount
+    \item Average cost per meal
+    \item Total mess consumption
+    \item Feedback submissions
+    \item Average meal rating
+    \item Complaint frequency
+    \item Expected vs. actual participation
+    \item Food wastage indicators
+\end{itemize}
+
+\subsection*{Key questions}
+
+\begin{itemize}
+    \item Are students paying more fairly?
+    \item Is the mess preparing food more efficiently?
+    \item Is administration gaining better visibility?
+\end{itemize}
+
+% ============================================================
+% 12. APPENDIX
+% ============================================================
+
+\section{Appendix}
+
+Detailed supporting documents referenced by, but not contained in, this PRD:
+
+\subsection*{Product / UX}
+
+\begin{itemize}
+    \item Student journey
+    \item Admin journey
+    \item Payment journey
+    \item Wireframes
+    \item UI designs
+\end{itemize}
+
+\subsection*{Technical}
+
+\begin{itemize}
+    \item Database schema
+    \item Billing logic
+    \item API specification
+    \item Authentication architecture
+    \item Payment integration
+\end{itemize}
+
+\subsection*{Validation}
+
+\begin{itemize}
+    \item Student interviews
+    \item Mess administrator interviews
+    \item Pilot results
+    \item Payment-model validation
+    \item Food-wastage baseline
+\end{itemize}
+
+\subsection*{Business}
+
+\begin{itemize}
+    \item Pricing/billing model
+    \item College onboarding
+    \item Revenue model
+    \item Competitive analysis
+\end{itemize}
+
+\subsection*{Product Summary}
+
+\textbf{Problem} Student can pay a fixed mess fee despite consuming fewer
+meals, while mess operators may prepare food without accurate visibility into
+actual demand.
+
+\textbf{Solution} SmartMess connects meal consumption, billing, administration,
+feedback, and food-efficiency data into one platform.
+
+\textbf{Primary value} Students: payment fairness and transparency. Mess:
+demand visibility and reduced wastage. Administration: centralized control over
+consumption, billing, menu, feedback, and operations.
+
+\textbf{Vision} Move hostel mess management from fixed fees + estimated demand +
+manual management, to consumption-based transparency + data-driven planning +
+centralized administration.
+
+\textbf{SmartMess in one line}
+
+SmartMess makes mess payments fairer for students and mess operations smarter,
+by connecting what students consume with what the mess prepares and charges.
+
+\end{document}

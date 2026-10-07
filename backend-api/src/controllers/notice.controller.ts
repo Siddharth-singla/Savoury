@@ -21,6 +21,7 @@ export const listNotices = async (req: Request, res: Response, next: NextFunctio
     const limit = Math.min(Number(req.query.limit) || 20, 50);
     const cursor = req.query.cursor as string | undefined;
     const userRole = req.user!.role as Role;
+    const userHostelId = req.user!.hostelId;
 
     // Build visibility filter
     const roleFilter =
@@ -33,10 +34,26 @@ export const listNotices = async (req: Request, res: Response, next: NextFunctio
             ],
           };
 
+    // Build hostel visibility filter
+    const hostelFilter =
+      userRole === 'SUPER_ADMIN'
+        ? {} // Super admin sees all hostels
+        : userHostelId
+        ? {
+            OR: [
+              { hostelId: null }, // Global notices
+              { hostelId: userHostelId }, // Notices for my hostel
+            ],
+          }
+        : { hostelId: null };
+
     const notices = await prisma.notice.findMany({
       where: {
-        ...roleFilter,
-        ...(cursor ? { createdAt: { lt: (await prisma.notice.findUnique({ where: { id: cursor } }))?.createdAt } } : {}),
+        AND: [
+          roleFilter,
+          hostelFilter,
+          cursor ? { createdAt: { lt: (await prisma.notice.findUnique({ where: { id: cursor } }))?.createdAt } } : {},
+        ],
       },
       orderBy: { createdAt: 'desc' },
       take: limit + 1, // fetch one extra to determine hasMore
@@ -65,13 +82,24 @@ export const listNotices = async (req: Request, res: Response, next: NextFunctio
 export const latestTimestamp = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const userRole = req.user!.role as Role;
+    const userHostelId = req.user!.hostelId;
+    
     const roleFilter =
       userRole === 'WARDEN_ADMIN' || userRole === 'SUPER_ADMIN'
         ? {}
         : { OR: [{ targetRole: null }, { targetRole: userRole }] };
 
+    const hostelFilter =
+      userRole === 'SUPER_ADMIN'
+        ? {}
+        : userHostelId
+        ? { OR: [{ hostelId: null }, { hostelId: userHostelId }] }
+        : { hostelId: null };
+
     const latest = await prisma.notice.findFirst({
-      where: roleFilter,
+      where: {
+        AND: [roleFilter, hostelFilter],
+      },
       orderBy: { createdAt: 'desc' },
       select: { createdAt: true },
     });
@@ -96,6 +124,7 @@ export const createNotice = async (req: Request, res: Response, next: NextFuncti
         title,
         body,
         targetRole: targetRole ?? null,
+        hostelId: req.user!.hostelId,
         postedById: userId,
       },
       include: {

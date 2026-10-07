@@ -35,6 +35,18 @@ export const getSemesterEnd = async (req: Request, res: Response, next: NextFunc
         where: { key: SEMESTER_END_KEY },
       });
       semesterEndDate = config?.value ?? null;
+      
+      // Fallback: If not configured, force cashout lock until May 31 or Dec 31
+      if (!semesterEndDate) {
+        const now = new Date();
+        const year = now.getUTCFullYear();
+        const month = now.getUTCMonth(); // 0 to 11
+        if (month <= 4) {
+          semesterEndDate = `${year}-05-31`;
+        } else {
+          semesterEndDate = `${year}-12-31`;
+        }
+      }
     }
 
     res.status(200).json({

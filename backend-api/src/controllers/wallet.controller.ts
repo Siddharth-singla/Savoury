@@ -109,6 +109,16 @@ export const requestCashout = async (req: Request, res: Response, next: NextFunc
       });
       if (semConfig?.value) {
         semEndDate = new Date(semConfig.value + 'T00:00:00.000Z');
+      } else {
+        // Fallback: strictly lock until May 31 or Dec 31
+        const now = new Date();
+        const year = now.getUTCFullYear();
+        const month = now.getUTCMonth(); // 0 to 11
+        if (month <= 4) {
+          semEndDate = new Date(Date.UTC(year, 4, 31));
+        } else {
+          semEndDate = new Date(Date.UTC(year, 11, 31));
+        }
       }
     }
 

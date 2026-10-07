@@ -1,18 +1,15 @@
 import { useState, useCallback, useMemo } from 'react';
 import {
   View, Text, StyleSheet, FlatList, TouchableOpacity,
-  Alert, ActivityIndicator, Image,
+  Alert, ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useFocusEffect } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
 import { getWalletBalance, getWalletTransactions, requestCashout, getSemesterEndDate, WalletTransaction } from '../../src/api/wallet';
 import { C } from '../../constants/Colors';
-
-const WALLET_BANNER = {
-  uri: 'https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?w=800&q=80',
-};
 
 const TX_TYPE_LABELS: Record<string, { label: string; icon: string; color: string; bgColor: string }> = {
   TOPUP:          { label: 'Top Up',         icon: 'add-circle-outline', color: '#3a6b3a', bgColor: 'rgba(58,107,58,0.1)' },
@@ -49,7 +46,7 @@ export default function WalletScreen() {
   );
 
   const isSemesterEnded = useMemo(() => {
-    if (!semesterEndDate) return true;
+    if (!semesterEndDate) return false;
     const semEnd = new Date(semesterEndDate + 'T00:00:00.000Z');
     const dayAfter = new Date(semEnd);
     dayAfter.setUTCDate(dayAfter.getUTCDate() + 1);
@@ -139,21 +136,30 @@ export default function WalletScreen() {
         ListHeaderComponent={
           <>
             {/* ── Balance Hero Card ── */}
-            <View style={styles.heroCard}>
-              <Image source={WALLET_BANNER} style={styles.heroImage} resizeMode="cover" />
-              <View style={styles.heroOverlay} />
+            <LinearGradient
+              colors={['#2d1810', '#4a2518', '#1a0f0a']}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={styles.heroCard}
+            >
               <View style={styles.heroContent}>
-                <Text style={styles.heroLabel}>MEAL WALLET</Text>
+                <View style={styles.heroWalletIcon}>
+                  <Ionicons name="wallet" size={28} color="rgba(255,255,255,0.9)" />
+                </View>
+                <Text style={styles.heroLabel}>YOUR BALANCE</Text>
                 {isLoading ? (
                   <ActivityIndicator color="#fff" size="large" style={{ marginVertical: 8 }} />
                 ) : (
                   <Text style={styles.heroBalance}>₹{balanceStr}</Text>
                 )}
                 {balanceData?.semesterLabel && (
-                  <Text style={styles.heroSemester}>{balanceData.semesterLabel}</Text>
+                  <View style={styles.heroSemesterBadge}>
+                    <Ionicons name="calendar-outline" size={12} color="rgba(255,255,255,0.7)" />
+                    <Text style={styles.heroSemester}>{balanceData.semesterLabel}</Text>
+                  </View>
                 )}
               </View>
-            </View>
+            </LinearGradient>
 
             {/* ── End of Semester Points & Cashout Preference Card ── */}
             <View style={styles.preferenceCard}>
@@ -221,51 +227,43 @@ export default function WalletScreen() {
                 </View>
               ) : (
                 <View style={styles.optionDescBox}>
-                  {isSemesterEnded ? (
-                    <>
-                      <Text style={styles.optionDescTitle}>💵 Cashout Available</Text>
-                      <Text style={styles.optionDescText}>
-                        The semester has concluded. You can request a bank payout of your full remaining balance (₹{balanceStr}).
-                      </Text>
-                      <TouchableOpacity
-                        style={[
-                          styles.cashoutBtn,
-                          (balance <= 0 || cashoutMutation.isPending) && styles.cashoutBtnDisabled,
-                        ]}
-                        onPress={handleCashout}
-                        disabled={balance <= 0 || cashoutMutation.isPending}
-                        activeOpacity={0.8}
-                      >
-                        {cashoutMutation.isPending ? (
-                          <ActivityIndicator color="#fff" />
-                        ) : (
-                          <>
-                            <Ionicons name="cash-outline" size={18} color="#fff" />
-                            <Text style={styles.cashoutBtnText}>
-                              Request Cashout of ₹{balanceStr}
-                            </Text>
-                          </>
-                        )}
-                      </TouchableOpacity>
-                    </>
-                  ) : (
-                    <>
-                      <View style={styles.lockedHeaderRow}>
-                        <Ionicons name="lock-closed" size={18} color="#b45309" />
-                        <Text style={styles.lockedTitle}>Cashout Locked Until Semester End</Text>
-                      </View>
-                      <Text style={styles.optionDescText}>
-                        Cashout requests are only permitted after the semester officially ends
-                        {formattedSemesterEnd ? ` on ${formattedSemesterEnd}` : ''}.
-                      </Text>
-                      <View style={styles.lockedInfoPill}>
-                        <Ionicons name="information-circle-outline" size={14} color="#92400e" />
-                        <Text style={styles.lockedInfoText}>
-                          Your points are 100% secure. You can choose to cash out once the semester concludes or let them stay in your wallet.
+                  <View style={styles.lockedHeaderRow}>
+                    <Ionicons name={isSemesterEnded ? "cash-outline" : "lock-closed"} size={18} color={isSemesterEnded ? "#3a6b3a" : "#b45309"} />
+                    <Text style={[styles.lockedTitle, isSemesterEnded && { color: "#3a6b3a" }]}>
+                      {isSemesterEnded ? 'Cashout Available' : 'Cashout Locked Until Semester End'}
+                    </Text>
+                  </View>
+                  <Text style={styles.optionDescText}>
+                    {isSemesterEnded 
+                      ? `The semester has concluded. You can request a bank payout of your full remaining balance (₹${balanceStr}).`
+                      : `Cashout requests are only permitted after the semester officially ends${formattedSemesterEnd ? ` on ${formattedSemesterEnd}` : ''}. Your points are 100% secure.`
+                    }
+                  </Text>
+                  <TouchableOpacity
+                    style={[
+                      styles.cashoutBtn,
+                      (!isSemesterEnded || balance <= 0 || cashoutMutation.isPending) && styles.cashoutBtnDisabled,
+                    ]}
+                    onPress={() => {
+                      if (!isSemesterEnded) {
+                        Alert.alert('Locked', `You can withdraw your remaining money when the semester ends${formattedSemesterEnd ? ` on ${formattedSemesterEnd}` : ''}.`);
+                        return;
+                      }
+                      handleCashout();
+                    }}
+                    activeOpacity={0.8}
+                  >
+                    {cashoutMutation.isPending ? (
+                      <ActivityIndicator color="#fff" />
+                    ) : (
+                      <>
+                        <Ionicons name={isSemesterEnded ? "cash-outline" : "lock-closed"} size={18} color="#fff" />
+                        <Text style={styles.cashoutBtnText}>
+                          Request Cashout of ₹{balanceStr}
                         </Text>
-                      </View>
-                    </>
-                  )}
+                      </>
+                    )}
+                  </TouchableOpacity>
                 </View>
               )}
             </View>
@@ -309,20 +307,28 @@ const styles = StyleSheet.create({
 
   /* Hero Card */
   heroCard: {
-    height: 220, margin: 16, borderRadius: 20,
+    height: 240, margin: 16, borderRadius: 20,
     overflow: 'hidden',
-    shadowColor: '#000', shadowOpacity: 0.1, shadowRadius: 12,
-    shadowOffset: { width: 0, height: 4 }, elevation: 4,
+    shadowColor: '#000', shadowOpacity: 0.15, shadowRadius: 16,
+    shadowOffset: { width: 0, height: 6 }, elevation: 6,
   },
-  heroImage:   { ...StyleSheet.absoluteFillObject, width: '100%', height: '100%' },
-  heroOverlay: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(22,10,4,0.60)' },
-  heroContent: { flex: 1, justifyContent: 'flex-end', padding: 20 },
+  heroContent: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 20 },
+  heroWalletIcon: {
+    width: 52, height: 52, borderRadius: 26,
+    backgroundColor: 'rgba(255,255,255,0.15)',
+    alignItems: 'center', justifyContent: 'center', marginBottom: 10,
+  },
   heroLabel: {
-    fontSize: 11, fontWeight: '700', letterSpacing: 1.5,
-    color: 'rgba(255,255,255,0.65)', marginBottom: 4, textTransform: 'uppercase',
+    fontSize: 12, fontWeight: '700', letterSpacing: 2,
+    color: 'rgba(255,255,255,0.7)', marginBottom: 6, textTransform: 'uppercase',
   },
-  heroBalance: { fontSize: 44, fontWeight: '800', color: '#fff', letterSpacing: -1 },
-  heroSemester: { fontSize: 12, color: 'rgba(255,255,255,0.55)', marginTop: 4 },
+  heroBalance: { fontSize: 48, fontWeight: '800', color: '#fff', letterSpacing: -1 },
+  heroSemesterBadge: {
+    flexDirection: 'row', alignItems: 'center', gap: 5, marginTop: 8,
+    backgroundColor: 'rgba(255,255,255,0.12)', paddingHorizontal: 10, paddingVertical: 4,
+    borderRadius: 12,
+  },
+  heroSemester: { fontSize: 12, color: 'rgba(255,255,255,0.7)', fontWeight: '600' },
 
   /* Preference Card */
   preferenceCard: {

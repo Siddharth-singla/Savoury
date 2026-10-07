@@ -2,7 +2,10 @@ import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import prisma from '../db';
 
-const JWT_SECRET = process.env.JWT_SECRET || 'dev_jwt_secret_please_set_in_env';
+const JWT_SECRET = process.env.JWT_SECRET;
+if (!JWT_SECRET) {
+  throw new Error('FATAL: JWT_SECRET environment variable is missing.');
+}
 
 interface RegisterData {
   name: string;

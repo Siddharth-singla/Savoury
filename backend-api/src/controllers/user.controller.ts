@@ -25,12 +25,14 @@ const updateUserSchema = z.object({
   password: z.string().min(6).optional(),
 });
 
+const base64ImageRegex = /^data:image\/(jpeg|png|webp|jpg);base64,[A-Za-z0-9+/=]+$/;
+
 const updateMeSchema = z.object({
   name: z.string().min(2).optional(),
   phone: z.string().optional().nullable(),
   roomNo: z.string().optional().nullable(),
   rollNo: z.string().optional().nullable(),
-  avatarBase64: z.string().optional().nullable(),
+  avatarBase64: z.string().regex(base64ImageRegex, 'Invalid image format. Only JPEG, PNG, and WEBP are allowed.').optional().nullable(),
 });
 
 const createUserSchema = z.object({

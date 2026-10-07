@@ -276,15 +276,23 @@ export const updateUserRole = async (req: Request, res: Response, next: NextFunc
     const { role } = updateRoleSchema.parse(req.body);
     const { hostelId: callerHostelId, role: callerRole } = req.user!;
 
+    const targetUser = await prisma.user.findUnique({
+      where: { id },
+      select: { hostelId: true, role: true },
+    });
+    if (!targetUser) return res.status(404).json({ error: 'User not found' });
+
+    // Mess Staff (COUNTER_STAFF) are added independently and have a fixed role —
+    // their role cannot be changed from the role control by anyone. To re-assign,
+    // delete and recreate the account.
+    if (targetUser.role === 'COUNTER_STAFF') {
+      return res.status(403).json({ error: "A Mess Staff account's role cannot be changed. Delete and recreate it instead." });
+    }
+
     // Hostel admins (Warden/Co-Warden/Caretaker) may only toggle students
     // between STUDENT and MESS_COMMITTEE, within their own hostel. They
     // cannot touch other admins or assign privileged roles.
     if (isHostelAdmin(callerRole)) {
-      const targetUser = await prisma.user.findUnique({
-        where: { id },
-        select: { hostelId: true, role: true },
-      });
-      if (!targetUser) return res.status(404).json({ error: 'User not found' });
       if (targetUser.hostelId !== callerHostelId) {
         return res.status(403).json({ error: 'You can only manage users in your own hostel' });
       }

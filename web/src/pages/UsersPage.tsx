@@ -527,11 +527,14 @@ export default function UsersPage() {
 
                       // Role is NOT changeable from the inline control when:
                       //  - the row is a Super Admin (never demoted from this UI), or
+                      //  - the row is Mess Staff (COUNTER_STAFF) — added independently,
+                      //    role is fixed (locked for everyone), or
                       //  - the row is a hostel-admin (Warden/Co-Warden/Caretaker)
                       //    and the viewer is not a Super Admin.
                       // Only a Super Admin may change a hostel-admin's role.
                       const roleLocked =
                         u.role === 'SUPER_ADMIN' ||
+                        u.role === 'COUNTER_STAFF' ||
                         (HOSTEL_ADMIN_ROLES.includes(u.role) && !isSuperAdmin);
 
                       return (

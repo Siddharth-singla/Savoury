@@ -1,0 +1,20 @@
+services:
+  - type: web
+    name: savoury-api
+    runtime: node
+    region: singapore  # closest to India
+    plan: free
+    rootDir: backend-api
+    buildCommand: npm install && npx prisma generate && npm run build
+    startCommand: npm start
+    envVars:
+      - key: DATABASE_URL
+        sync: false
+      - key: DIRECT_URL
+        sync: false
+      - key: JWT_SECRET
+        sync: false
+      - key: PORT
+        value: 3000
+      - key: NODE_ENV
+        value: production

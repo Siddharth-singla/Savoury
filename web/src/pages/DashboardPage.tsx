@@ -142,12 +142,13 @@ function DonutChart({ pct, size = 160, strokeWidth = 10, color, label, value }: 
    "Over" takes top priority once the serving window has ended. */
 function StatusBadge({ locked, isActive, isOver }: { locked: boolean; isActive: boolean; isOver: boolean }) {
   if (isOver) {
+    // Serving window has ended — red.
     return (
       <span style={{
         display: 'inline-flex', alignItems: 'center', gap: 5,
         padding: '3px 10px', borderRadius: 20,
-        background: C.surface2, border: `1px solid ${C.border}`,
-        fontSize: 11, fontWeight: 700, color: C.textMuted,
+        background: 'rgba(139,26,26,0.1)', border: `1px solid rgba(139,26,26,0.25)`,
+        fontSize: 11, fontWeight: 700, color: C.danger,
         fontFamily: "'Inter', sans-serif", letterSpacing: '0.04em',
       }}>
         Over
@@ -169,13 +170,13 @@ function StatusBadge({ locked, isActive, isOver }: { locked: boolean; isActive: 
     );
   }
   if (locked) {
-    // Cutoff passed but serving hasn't ended yet — bookings are final.
+    // Cutoff passed but serving hasn't ended yet — bookings are final (orange).
     return (
       <span style={{
         display: 'inline-flex', alignItems: 'center', gap: 5,
         padding: '3px 10px', borderRadius: 20,
-        background: C.successLight, border: `1px solid rgba(58,107,58,0.25)`,
-        fontSize: 11, fontWeight: 700, color: C.success,
+        background: 'rgba(184,134,11,0.12)', border: `1px solid rgba(184,134,11,0.3)`,
+        fontSize: 11, fontWeight: 700, color: C.warning,
         fontFamily: "'Inter', sans-serif", letterSpacing: '0.04em',
       }}>
         Final

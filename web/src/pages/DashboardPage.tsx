@@ -311,11 +311,19 @@ export default function DashboardPage() {
 
   /* Summary totals */
   const totals = useMemo(() => {
-    if (!data) return { expected: 0, total: 0 };
-    return data.headcounts.reduce(
-      (acc, hc) => ({ expected: acc.expected + hc.count, total: acc.total + hc.totalStudents }),
-      { expected: 0, total: 0 }
-    );
+    if (!data || data.headcounts.length === 0) {
+      return { expected: 0, total: 0, served: 0 };
+    }
+    // "expected" is summed across meals (plates to plan for).
+    // "total" is the DISTINCT student count — identical on every meal entry,
+    // so take it from the first entry rather than summing across meals.
+    // "served" is the day total of actually-served students.
+    const expected = data.headcounts.reduce((acc, hc) => acc + hc.count, 0);
+    return {
+      expected,
+      total: data.headcounts[0].totalStudents,
+      served: data.totalServed ?? data.headcounts.reduce((acc, hc) => acc + hc.servedCount, 0),
+    };
   }, [data]);
 
   return (
@@ -426,11 +434,11 @@ export default function DashboardPage() {
               ),
             },
             {
-              label: 'Meal Services',
-              value: data.headcounts.length,
+              label: 'Served Today\n(All Meals)',
+              value: totals.served,
               icon: (
-                <div style={{ width: 44, height: 44, borderRadius: '50%', background: C.surface2, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  <Clock size={20} color={C.textMuted} strokeWidth={1.8} />
+                <div style={{ width: 44, height: 44, borderRadius: '50%', background: C.successLight, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <CheckCircle2 size={20} color={C.success} strokeWidth={1.8} />
                 </div>
               ),
             },

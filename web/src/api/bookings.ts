@@ -6,6 +6,7 @@ export interface HeadcountEntry {
   count: number;
   totalStudents: number;
   optedOutCount: number;
+  servedCount: number;
   locked: boolean;
   cutoffAt: string;
 }
@@ -13,6 +14,7 @@ export interface HeadcountEntry {
 export interface HeadcountResponse {
   date: string;
   headcounts: HeadcountEntry[];
+  totalServed: number;
 }
 
 export const getHeadcount = async (date: string): Promise<HeadcountResponse> => {

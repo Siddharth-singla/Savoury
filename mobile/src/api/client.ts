@@ -2,14 +2,32 @@ import axios from 'axios';
 import * as SecureStore from 'expo-secure-store';
 import Constants from 'expo-constants';
 
-export const TOKEN_KEY = 'smartmess_token';
+import { Platform } from 'react-native';
 
-const baseURL =
-  (Constants.expoConfig?.extra?.apiUrl as string | undefined) ??
-  process.env.EXPO_PUBLIC_API_URL ??
-  'http://10.0.2.2:3000';
+export const TOKEN_KEY = 'savoury_token';
 
-const apiClient = axios.create({ baseURL, timeout: 10000 });
+const getBaseUrl = (): string => {
+  if (process.env.EXPO_PUBLIC_API_URL) {
+    return process.env.EXPO_PUBLIC_API_URL;
+  }
+  if (Constants.expoConfig?.extra?.apiUrl) {
+    return Constants.expoConfig.extra.apiUrl as string;
+  }
+  const hostUri = Constants.expoConfig?.hostUri;
+  if (hostUri) {
+    const ip = hostUri.split(':')[0];
+    return `http://${ip}:3000`;
+  }
+  if (Platform.OS === 'android') {
+    return 'http://10.0.2.2:3000';
+  }
+  return 'http://localhost:3000';
+};
+
+const baseURL = getBaseUrl();
+const apiClient = axios.create({ baseURL, timeout: 30000 });
+console.log('[API Client] Initialized with baseURL:', baseURL);
+
 
 apiClient.interceptors.request.use(async (config) => {
   const token = await SecureStore.getItemAsync(TOKEN_KEY);

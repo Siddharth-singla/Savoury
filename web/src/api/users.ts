@@ -8,6 +8,7 @@ export interface UserRow {
   hostelId: string | null;
   rollNo: string | null;
   phone: string | null;
+  roomNo?: string | null;
   createdAt: string;
   hostel?: { name: string } | null;
 }
@@ -19,13 +20,40 @@ export interface UsersResponse {
   limit: number;
 }
 
-export const listUsers = async (params: { role?: string; hostelId?: string; page?: number; limit?: number }): Promise<UsersResponse> => {
+export const listUsers = async (params: { role?: string; hostelId?: string; page?: number; limit?: number; search?: string }): Promise<UsersResponse> => {
   const res = await client.get<UsersResponse>('/users', { params });
   return res.data;
 };
 
 export const updateRole = async (id: string, role: string): Promise<UserRow> => {
   const res = await client.patch<{ user: UserRow }>(`/users/${id}/role`, { role });
+  return res.data.user;
+};
+
+export const updateUser = async (id: string, payload: {
+  name?: string;
+  email?: string;
+  rollNo?: string | null;
+  phone?: string | null;
+  roomNo?: string | null;
+  role?: string;
+  password?: string;
+}): Promise<UserRow> => {
+  const res = await client.put<{ user: UserRow }>(`/users/${id}`, payload);
+  return res.data.user;
+};
+
+export const createUser = async (payload: {
+  name: string;
+  email: string;
+  password: string;
+  role: string;
+  rollNo?: string | null;
+  phone?: string | null;
+  roomNo?: string | null;
+  hostelId?: string | null;
+}): Promise<UserRow> => {
+  const res = await client.post<{ user: UserRow }>('/users', payload);
   return res.data.user;
 };
 

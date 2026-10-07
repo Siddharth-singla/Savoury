@@ -11,11 +11,13 @@ export default function FeePlanPage() {
   const { data: hostelsData } = useQuery({
     queryKey: ['hostels'],
     queryFn: listHostels,
+    refetchInterval: 60_000,
   });
 
   const { data: feePlansData, isLoading } = useQuery({
     queryKey: ['fee-plans'],
     queryFn: listFeePlans,
+    refetchInterval: 60_000,
   });
 
   const mutation = useMutation({

@@ -13,6 +13,7 @@ export interface RegisterData {
   hostelId: string;
   rollNo?: string;
   phone?: string;
+  roomNo?: string;
 }
 
 export const postRegister = async (data: RegisterData): Promise<RegisterResponse> => {

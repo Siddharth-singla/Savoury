@@ -10,6 +10,7 @@ const registerSchema = z.object({
   hostelId: z.string().optional(),
   rollNo: z.string().regex(/^\d{10}$/, 'Roll Number must be exactly 10 digits').optional(),
   phone: z.string().regex(/^\d{10}$/, 'Phone must be exactly 10 digits').optional(),
+  roomNo: z.string().optional(),
 });
 
 /**

@@ -10,6 +10,9 @@ export interface User {
   role: 'STUDENT' | 'MESS_COMMITTEE' | 'WARDEN_ADMIN' | 'COUNTER_STAFF' | 'SUPER_ADMIN';
   hostelId: string | null;
   hostelName?: string;
+  rollNo?: string | null;
+  phone?: string | null;
+  roomNo?: string | null;
   walletBalance?: string | number;
 }
 

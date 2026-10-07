@@ -1,11 +1,11 @@
 {
   "expo": {
-    "name": "SmartMess",
-    "slug": "SmartMess",
+    "name": "Savoury",
+    "slug": "savoury",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/images/icon.png",
-    "scheme": "smartmess",
+    "icon": "./assets/images/logo.png",
+    "scheme": "savoury",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {

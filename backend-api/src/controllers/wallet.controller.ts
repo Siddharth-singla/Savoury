@@ -72,6 +72,11 @@ export const requestCashout = async (req: Request, res: Response, next: NextFunc
     const studentId = req.user!.userId;
     const { requestedAmount } = cashoutRequestSchema.parse(req.body);
 
+    const student = await prisma.user.findUnique({
+      where: { id: studentId },
+      select: { hostelId: true },
+    });
+
     const activeWallet = await prisma.walletAccount.findFirst({
       where: { studentId },
       orderBy: { createdAt: 'desc' },
@@ -80,6 +85,47 @@ export const requestCashout = async (req: Request, res: Response, next: NextFunc
     if (!activeWallet) {
       return res.status(404).json({ error: 'Wallet not found' });
     }
+
+    // ── Per-Hostel Semester End Gate ──────────────────────────────
+    let semEndDate: Date | null = null;
+
+    if (student?.hostelId) {
+      const feePlan = await prisma.hostelFeePlan.findFirst({
+        where: {
+          hostelId: student.hostelId,
+          semesterLabel: activeWallet.semesterLabel,
+          semesterEndDate: { not: null },
+        },
+      });
+      if (feePlan?.semesterEndDate) {
+        semEndDate = new Date(feePlan.semesterEndDate);
+      }
+    }
+
+    // Fallback to global config if no hostel-specific date found
+    if (!semEndDate) {
+      const semConfig = await prisma.systemConfig.findUnique({
+        where: { key: 'semester_end_date' },
+      });
+      if (semConfig?.value) {
+        semEndDate = new Date(semConfig.value + 'T00:00:00.000Z');
+      }
+    }
+
+    if (semEndDate) {
+      const tomorrow = new Date(semEndDate);
+      tomorrow.setUTCDate(tomorrow.getUTCDate() + 1);
+      if (new Date() < tomorrow) {
+        const formatted = semEndDate.toLocaleDateString('en-IN', {
+          day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC',
+        });
+        return res.status(403).json({
+          error: `Cashout is only available after your hostel's semester ends on ${formatted}.`,
+          semesterEndDate: semEndDate.toISOString().split('T')[0],
+        });
+      }
+    }
+    // ─────────────────────────────────────────────────────────────
 
     if (activeWallet.balance.toNumber() < requestedAmount) {
       return res.status(400).json({ error: 'Insufficient balance' });

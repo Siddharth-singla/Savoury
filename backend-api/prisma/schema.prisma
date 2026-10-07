@@ -1,5 +1,5 @@
 // ============================================================
-// SmartMess — Prisma Schema (PostgreSQL)
+// Savoury — Prisma Schema (PostgreSQL)
 // ============================================================
 
 generator client {
@@ -74,12 +74,13 @@ model Hostel {
 }
 
 model HostelFeePlan {
-  id            String   @id @default(cuid())
-  hostel        Hostel   @relation(fields: [hostelId], references: [id], onDelete: Cascade)
-  hostelId      String
-  semesterLabel String
-  totalFee      Decimal  @db.Decimal(10, 2)
-  createdAt     DateTime @default(now())
+  id              String    @id @default(cuid())
+  hostel          Hostel    @relation(fields: [hostelId], references: [id], onDelete: Cascade)
+  hostelId        String
+  semesterLabel   String
+  totalFee        Decimal   @db.Decimal(10, 2)
+  semesterEndDate DateTime? @db.Date
+  createdAt       DateTime  @default(now())
 
   @@unique([hostelId, semesterLabel])
   @@map("hostel_fee_plans")
@@ -107,6 +108,8 @@ model User {
   rollNo       String?  @unique   // null for staff/admin accounts
   email        String   @unique
   phone        String?
+  roomNo       String?
+  avatarBase64 String?  @db.Text
   passwordHash String
   role         Role     @default(STUDENT)
 
@@ -128,6 +131,7 @@ model User {
   walletAccounts   WalletAccount[]
   cashoutRequests  CashoutRequest[]
   resolvedCashouts CashoutRequest[] @relation("ResolvedBy")
+  mealOptOuts      MealOptOut[]
 
   @@index([hostelId, role])
   @@map("users")
@@ -336,4 +340,32 @@ model CashoutRequest {
   resolutionNote  String?
 
   @@map("cashout_requests")
+}
+
+// ------------------------------------------------------------
+// MEAL OPT-OUT CALENDAR — student absence scheduling
+// ------------------------------------------------------------
+
+model MealOptOut {
+  id          String   @id @default(cuid())
+  student     User     @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  studentId   String
+  date        DateTime @db.Date  // The specific date opted out (all meals for that day)
+  createdAt   DateTime @default(now())
+
+  @@unique([studentId, date])
+  @@index([studentId, date])
+  @@map("meal_opt_outs")
+}
+
+// ------------------------------------------------------------
+// SYSTEM CONFIG — global key-value settings (semester end date etc.)
+// ------------------------------------------------------------
+
+model SystemConfig {
+  key       String   @id
+  value     String
+  updatedAt DateTime @updatedAt
+
+  @@map("system_config")
 }

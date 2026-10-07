@@ -6,5 +6,6 @@ export const useMenu = (startDate: Date, endDate: Date) => {
     queryKey: ['menu', startDate.toISOString(), endDate.toISOString()],
     queryFn: () => getMenu(startDate, endDate),
     staleTime: 60_000,
+    refetchInterval: 30_000,
   });
 };

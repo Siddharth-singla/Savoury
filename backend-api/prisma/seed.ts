@@ -1,5 +1,5 @@
 // ============================================================
-// SmartMess — Prisma Seed File
+// Savoury — Prisma Seed File
 // Seeds only infrastructure data: hostels, messes, meal types.
 // NO users — use the web setup page to create the first SUPER_ADMIN.
 // Run with: npx prisma db seed
@@ -43,7 +43,7 @@ async function main() {
       slot: MealSlot.BREAKFAST,
       displayName: 'Breakfast',
       defaultCutoffTime: '00:00', // midnight — locks the night before
-      servingStart: '07:30',
+      servingStart: '07:00',
       servingEnd: '09:30',
       perMealRate: 75.00,
     },
@@ -54,7 +54,7 @@ async function main() {
       displayName: 'Lunch',
       defaultCutoffTime: '09:00',
       servingStart: '12:00',
-      servingEnd: '14:00',
+      servingEnd: '14:30',
       perMealRate: 75.00,
     },
   });
@@ -63,7 +63,7 @@ async function main() {
       slot: MealSlot.DINNER,
       displayName: 'Dinner',
       defaultCutoffTime: '14:00', // 2 PM same day
-      servingStart: '19:30',
+      servingStart: '19:00',
       servingEnd: '21:30',
       perMealRate: 75.00,
     },

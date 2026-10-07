@@ -1,4 +1,4 @@
-// SmartMess — Delete all users from the database
+// Savoury — Delete all users from the database
 // Usage: npx ts-node clear-users.ts
 
 import { PrismaClient } from '@prisma/client';

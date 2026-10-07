@@ -1,16 +1,18 @@
 import { useState, useEffect } from 'react';
 import {
   View, Text, TextInput, TouchableOpacity, StyleSheet, KeyboardAvoidingView,
-  Platform, ActivityIndicator, ScrollView, Modal, FlatList,
+  Platform, ActivityIndicator, ScrollView, Modal, FlatList, Image,
 } from 'react-native';
 import { useRouter } from 'expo-router';
+import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../../src/context/AuthContext';
 import { postRegister, postLogin } from '../../src/api/auth';
 import { getHostels } from '../../src/api/hostels';
 import { parseApiError } from '../../src/utils/apiError';
 import type { Hostel } from '../../src/types';
+import { C } from '../../constants/Colors';
 
-type FieldKeys = 'name' | 'email' | 'password' | 'hostelId' | 'rollNo' | 'phone';
+type FieldKeys = 'name' | 'email' | 'password' | 'hostelId' | 'rollNo' | 'phone' | 'roomNo';
 type FieldErrors = Partial<Record<FieldKeys, string>>;
 
 export default function RegisterScreen() {
@@ -22,6 +24,7 @@ export default function RegisterScreen() {
   const [password, setPassword] = useState('');
   const [rollNo, setRollNo] = useState('');
   const [phone, setPhone] = useState('');
+  const [roomNo, setRoomNo] = useState('');
   const [hostelId, setHostelId] = useState('');
   const [hostelName, setHostelName] = useState('');
 
@@ -77,6 +80,7 @@ export default function RegisterScreen() {
       await postRegister({
         name: name.trim(), email: email.trim(), password, hostelId,
         rollNo: rollNo.trim() || undefined, phone: phone.trim() || undefined,
+        roomNo: roomNo.trim() || undefined,
       });
       const result = await postLogin(email.trim(), password);
       await login(result.accessToken, result.user);
@@ -98,9 +102,9 @@ export default function RegisterScreen() {
     <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
       <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
         <View style={styles.header}>
-          <Text style={styles.logo}>🍽️</Text>
+          <Image source={require('../../assets/images/logo.png')} style={styles.logoImage} resizeMode="contain" />
           <Text style={styles.title}>Create Account</Text>
-          <Text style={styles.subtitle}>Join SmartMess today</Text>
+          <Text style={styles.subtitle}>Join Savoury today</Text>
         </View>
 
         <View style={styles.form}>
@@ -162,6 +166,15 @@ export default function RegisterScreen() {
             </TouchableOpacity>
           )}
           {fieldErrors.hostelId && <Text style={styles.fieldError}>{fieldErrors.hostelId}</Text>}
+
+          {/* Room No */}
+          <Text style={styles.label}>Room Number (optional)</Text>
+          <TextInput
+            style={styles.input}
+            value={roomNo} onChangeText={setRoomNo}
+            placeholder="e.g. 214, B-302" placeholderTextColor="#64748b"
+            autoCapitalize="characters" editable={!loading}
+          />
 
           {/* Roll No */}
           <Text style={styles.label}>Roll Number (optional)</Text>
@@ -237,67 +250,68 @@ export default function RegisterScreen() {
 }
 
 const styles = StyleSheet.create({
-  flex: { flex: 1, backgroundColor: '#0f172a' },
+  flex: { flex: 1, backgroundColor: C.bg },
   container: { flexGrow: 1, paddingHorizontal: 24, paddingVertical: 48 },
   header: { alignItems: 'center', marginBottom: 32 },
-  logo: { fontSize: 48, marginBottom: 12 },
-  title: { fontSize: 28, fontWeight: '700', color: '#f1f5f9', letterSpacing: -0.5 },
-  subtitle: { fontSize: 14, color: '#94a3b8', marginTop: 6 },
+  logoImage: { width: 56, height: 56, marginBottom: 12 },
+  title: { fontSize: 28, fontWeight: '800', color: C.text, letterSpacing: -0.5 },
+  subtitle: { fontSize: 14, color: C.textMuted, marginTop: 6 },
   form: { width: '100%' },
   errorBox: {
-    backgroundColor: '#450a0a', borderRadius: 10, padding: 12, marginBottom: 8,
-    borderLeftWidth: 4, borderLeftColor: '#ef4444',
+    flexDirection: 'row', alignItems: 'center', gap: 8,
+    backgroundColor: C.dangerBg, borderRadius: 10, padding: 12, marginBottom: 8,
+    borderLeftWidth: 3, borderLeftColor: C.danger,
   },
-  errorText: { color: '#fca5a5', fontSize: 13, lineHeight: 19 },
-  label: { color: '#94a3b8', fontSize: 13, fontWeight: '600', marginBottom: 6, marginTop: 18 },
+  errorText: { color: C.danger, fontSize: 13, lineHeight: 19, flex: 1 },
+  label: { color: C.textSub, fontSize: 13, fontWeight: '700', marginBottom: 6, marginTop: 18 },
   input: {
-    backgroundColor: '#1e293b', borderRadius: 12, paddingHorizontal: 16,
-    paddingVertical: 14, color: '#f1f5f9', fontSize: 15,
-    borderWidth: 1, borderColor: '#334155',
+    backgroundColor: C.surface2, borderRadius: 12, paddingHorizontal: 16,
+    paddingVertical: 14, color: C.text, fontSize: 15,
+    borderWidth: 1, borderColor: C.border,
   },
-  inputError: { borderColor: '#ef4444' },
-  fieldError: { color: '#fca5a5', fontSize: 12, marginTop: 4, marginLeft: 4 },
+  inputError: { borderColor: C.danger },
+  fieldError: { color: C.danger, fontSize: 12, marginTop: 4, marginLeft: 4 },
   picker: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  pickerValue: { color: '#f1f5f9', fontSize: 15 },
-  pickerPlaceholder: { color: '#64748b', fontSize: 15 },
-  pickerChevron: { color: '#6366f1', fontSize: 18 },
+  pickerValue: { color: C.text, fontSize: 15 },
+  pickerPlaceholder: { color: C.textMuted, fontSize: 15 },
+  pickerChevron: { color: C.accent, fontSize: 18 },
   pickerLoading: { flexDirection: 'row', alignItems: 'center', gap: 10 },
-  pickerLoadingText: { color: '#64748b', fontSize: 14 },
-  pickerError: { borderColor: '#ef4444' },
+  pickerLoadingText: { color: C.textMuted, fontSize: 14 },
+  pickerError: { borderColor: C.danger },
   button: {
-    backgroundColor: '#6366f1', borderRadius: 12, paddingVertical: 16,
+    backgroundColor: C.primary, borderRadius: 14, paddingVertical: 16,
     alignItems: 'center', marginTop: 28,
   },
   buttonDisabled: { opacity: 0.6 },
-  buttonText: { color: '#fff', fontSize: 16, fontWeight: '700' },
+  buttonText: { color: '#fff', fontSize: 16, fontWeight: '700', letterSpacing: 0.3 },
   linkBtn: { alignItems: 'center', marginTop: 20, paddingVertical: 8 },
-  linkText: { color: '#64748b', fontSize: 14 },
-  linkHighlight: { color: '#818cf8', fontWeight: '600' },
+  linkText: { color: C.textMuted, fontSize: 14 },
+  linkHighlight: { color: C.accent, fontWeight: '700' },
 });
 
 const modal = StyleSheet.create({
   overlay: {
     flex: 1, justifyContent: 'flex-end',
-    backgroundColor: 'rgba(0,0,0,0.6)',
+    backgroundColor: 'rgba(0,0,0,0.45)',
   },
   sheet: {
-    backgroundColor: '#1e293b', borderTopLeftRadius: 24, borderTopRightRadius: 24,
+    backgroundColor: C.surface, borderTopLeftRadius: 24, borderTopRightRadius: 24,
     maxHeight: '60%', paddingBottom: 40,
   },
   header: {
     flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
-    padding: 20, borderBottomWidth: 1, borderBottomColor: '#334155',
+    padding: 20, borderBottomWidth: 1, borderBottomColor: C.border,
   },
-  title: { color: '#f1f5f9', fontSize: 17, fontWeight: '700' },
-  close: { color: '#64748b', fontSize: 18, paddingHorizontal: 4 },
+  title: { color: C.text, fontSize: 17, fontWeight: '700' },
+  close: { color: C.textMuted, fontSize: 18, paddingHorizontal: 4 },
   item: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
     paddingHorizontal: 20, paddingVertical: 16,
-    borderBottomWidth: 1, borderBottomColor: '#0f172a',
+    borderBottomWidth: 1, borderBottomColor: C.border,
   },
-  itemSelected: { backgroundColor: '#1e1e4a' },
-  itemText: { color: '#94a3b8', fontSize: 16 },
-  itemTextSelected: { color: '#818cf8', fontWeight: '600' },
-  check: { color: '#6366f1', fontSize: 18 },
-  empty: { color: '#475569', textAlign: 'center', padding: 32 },
+  itemSelected: { backgroundColor: C.accentLight },
+  itemText: { color: C.textSub, fontSize: 16 },
+  itemTextSelected: { color: C.primary, fontWeight: '700' },
+  check: { color: C.success, fontSize: 18 },
+  empty: { color: C.textMuted, textAlign: 'center', padding: 32 },
 });

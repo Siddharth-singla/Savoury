@@ -5,15 +5,21 @@ export function computeCutoffMoment(
   const [cutoffHour, cutoffMinute] = mealType.defaultCutoffTime.split(':').map(Number);
   const [servingHour, servingMinute] = mealType.servingStart.split(':').map(Number);
 
+  // Cutoff is before serving time → cutoff is on the PREVIOUS calendar day
   const isPreviousDay =
     cutoffHour > servingHour || (cutoffHour === servingHour && cutoffMinute > servingMinute);
 
-  // Use explicitly UTC methods to prevent server local timezone from shifting the day
-  const year = mealDate.getUTCFullYear();
+  // Always use UTC methods so the result is timezone-invariant.
+  // mealDate is already UTC-normalised (midnight UTC), so we must build
+  // the cutoff in UTC too — otherwise new Date(y, m, d, h, min) would
+  // interpret the values in the server's LOCAL timezone.
+  const year  = mealDate.getUTCFullYear();
   const month = mealDate.getUTCMonth();
-  const date = mealDate.getUTCDate();
+  const day   = mealDate.getUTCDate();
 
-  const cutoffMoment = new Date(year, month, isPreviousDay ? date - 1 : date, cutoffHour, cutoffMinute, 0, 0);
+  const cutoffMoment = new Date(
+    Date.UTC(year, month, isPreviousDay ? day - 1 : day, cutoffHour, cutoffMinute, 0, 0)
+  );
 
   return cutoffMoment;
 }

@@ -74,12 +74,15 @@ export const deleteHostel = async (req: Request, res: Response, next: NextFuncti
 const feePlanSchema = z.object({
   semesterLabel: z.string().min(1),
   totalFee: z.number().positive(),
+  semesterEndDate: z.string().optional().nullable(),
 });
 
 export const setFeePlan = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { id } = req.params;
-    const { semesterLabel, totalFee } = feePlanSchema.parse(req.body);
+    const { semesterLabel, totalFee, semesterEndDate } = feePlanSchema.parse(req.body);
+
+    const parsedDate = semesterEndDate ? new Date(semesterEndDate + 'T00:00:00.000Z') : null;
 
     const feePlan = await prisma.hostelFeePlan.upsert({
       where: {
@@ -90,11 +93,13 @@ export const setFeePlan = async (req: Request, res: Response, next: NextFunction
       },
       update: {
         totalFee,
+        semesterEndDate: parsedDate,
       },
       create: {
         hostelId: id,
         semesterLabel,
         totalFee,
+        semesterEndDate: parsedDate,
       }
     });
 

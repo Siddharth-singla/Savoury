@@ -5,7 +5,7 @@ import type { User, AuthTokenPayload } from '../types';
 
 // Stored alongside the token so we can restore name/email after a cold start
 // without needing a /me endpoint.
-const USER_KEY = 'smartmess_user';
+const USER_KEY = 'savoury_user';
 
 function decodeJwt<T>(token: string): T {
   const part = token.split('.')[1];

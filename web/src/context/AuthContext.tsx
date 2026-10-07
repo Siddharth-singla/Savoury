@@ -33,7 +33,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const logout = useCallback(() => {
     localStorage.removeItem(TOKEN_KEY);
-    localStorage.removeItem('smartmess_web_user');
+    localStorage.removeItem('savoury_web_user');
     setToken(null);
     setUser(null);
   }, []);
@@ -45,7 +45,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   useEffect(() => {
     try {
       const storedToken = localStorage.getItem(TOKEN_KEY);
-      const storedUser = localStorage.getItem('smartmess_web_user');
+      const storedUser = localStorage.getItem('savoury_web_user');
       if (storedToken && storedUser) {
         const payload = decodeJwt<{ exp: number }>(storedToken);
         if (payload.exp * 1000 > Date.now()) {
@@ -64,7 +64,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const login = useCallback((newToken: string, newUser: AuthUser) => {
     localStorage.setItem(TOKEN_KEY, newToken);
-    localStorage.setItem('smartmess_web_user', JSON.stringify(newUser));
+    localStorage.setItem('savoury_web_user', JSON.stringify(newUser));
     setToken(newToken);
     setUser(newUser);
   }, []);

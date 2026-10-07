@@ -1,7 +1,7 @@
 {
   "name": "backend-api",
   "version": "1.0.0",
-  "description": "SmartMess backend — Prisma + Supabase",
+  "description": "Savoury backend — Prisma + Supabase",
   "main": "dist/server.js",
   "scripts": {
     "build": "tsc -p tsconfig.build.json",

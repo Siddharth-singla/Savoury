@@ -2,7 +2,7 @@ import axios from 'axios';
 
 const BASE_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:3000';
 
-export const TOKEN_KEY = 'smartmess_web_token';
+export const TOKEN_KEY = 'savoury_web_token';
 
 const apiClient = axios.create({ baseURL: BASE_URL, timeout: 10000 });
 

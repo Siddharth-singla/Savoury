@@ -10,6 +10,7 @@ export interface HostelFeePlan {
   hostelId: string;
   semesterLabel: string;
   totalFee: number;
+  semesterEndDate?: string | null;
   hostel?: { name: string };
 }
 
@@ -38,7 +39,8 @@ export const listFeePlans = async (): Promise<{ feePlans: HostelFeePlan[] }> => 
   return res.data;
 };
 
-export const setFeePlan = async (hostelId: string, payload: { semesterLabel: string; totalFee: number }) => {
+export const setFeePlan = async (hostelId: string, payload: { semesterLabel: string; totalFee: number; semesterEndDate?: string | null }) => {
   const res = await api.post(`/hostels/${hostelId}/fee-plans`, payload);
   return res.data;
 };
+

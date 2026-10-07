@@ -55,3 +55,12 @@ export const requestCashout = async (requestedAmount: number): Promise<CashoutRe
   const res = await client.post<CashoutResponse>('/wallet/cashout-request', { requestedAmount });
   return res.data;
 };
+
+export const getSemesterEndDate = async (): Promise<string | null> => {
+  try {
+    const res = await client.get<{ success: boolean; semesterEndDate: string | null }>('/config/semester-end');
+    return res.data.semesterEndDate;
+  } catch {
+    return null;
+  }
+};

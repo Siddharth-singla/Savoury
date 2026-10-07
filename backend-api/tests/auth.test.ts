@@ -17,7 +17,7 @@ describe('Auth Endpoints', () => {
         passwordHash: 'hashed-password',
         rollNo: null,
         phone: null,
-
+        roomNo: null,
         createdAt: new Date(),
         updatedAt: new Date(),
       });
@@ -76,7 +76,7 @@ describe('Auth Endpoints', () => {
         passwordHash: 'hashed',
         rollNo: null,
         phone: null,
-
+        roomNo: null,
         createdAt: new Date(),
         updatedAt: new Date(),
       });

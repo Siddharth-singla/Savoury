@@ -11,6 +11,7 @@ import MenuPage from './pages/MenuPage';
 import UsersPage from './pages/UsersPage';
 import WalletPage from './pages/WalletPage';
 import HostelsPage from './pages/HostelsPage';
+import NoticesPage from './pages/NoticesPage';
 
 const qc = new QueryClient({ defaultOptions: { queries: { retry: 1 } } });
 
@@ -76,6 +77,11 @@ export default function App() {
               <Route path="/hostels" element={
                 <ProtectedRoute allowedRoles={['SUPER_ADMIN']}>
                   <HostelsPage />
+                </ProtectedRoute>
+              } />
+              <Route path="/notices" element={
+                <ProtectedRoute allowedRoles={['MESS_COMMITTEE','WARDEN_ADMIN']}>
+                  <NoticesPage />
                 </ProtectedRoute>
               } />
             </Route>

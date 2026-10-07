@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { getMealTypes } from '../api/menu';
-import { getRoster, markServed } from '../api/attendance';
+import { getRoster, checkIn } from '../api/attendance';
 import { useAuth } from '../context/AuthContext';
 
 export default function RosterPage() {
@@ -28,10 +28,11 @@ export default function RosterPage() {
     queryFn: () => getRoster(mealTypeId, date),
     enabled: !!mealTypeId,
     staleTime: 5 * 60 * 1000,
+    refetchInterval: 15_000,
   });
 
   const markMutation = useMutation({
-    mutationFn: markServed,
+    mutationFn: (data: { studentId: string; mealTypeId: string; date: string }) => checkIn(data),
     onMutate: async (variables) => {
       await queryClient.cancelQueries({ queryKey: ['roster', mealTypeId, date.split('T')[0]] });
       const previousRoster = queryClient.getQueryData(['roster', mealTypeId, date.split('T')[0]]);
@@ -47,7 +48,7 @@ export default function RosterPage() {
 
       return { previousRoster };
     },
-    onError: (err, variables, context) => {
+    onError: (_err, _variables, context) => {
       if (context?.previousRoster) {
         queryClient.setQueryData(['roster', mealTypeId, date.split('T')[0]], context.previousRoster);
       }

@@ -11,6 +11,7 @@ interface RegisterData {
   hostelId?: string;
   rollNo?: string;
   phone?: string;
+  roomNo?: string;
 }
 
 /**
@@ -68,6 +69,7 @@ export const registerUser = async (data: RegisterData) => {
       hostelId: data.hostelId,
       rollNo: data.rollNo ?? null,
       phone: data.phone ?? null,
+      roomNo: data.roomNo ?? null,
       role: 'STUDENT',
     },
   });

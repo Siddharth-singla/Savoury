@@ -6,5 +6,6 @@ export const useBookings = (startDate: Date, endDate: Date) => {
     queryKey: ['bookings', startDate.toISOString(), endDate.toISOString()],
     queryFn: () => getBookings(startDate, endDate),
     staleTime: 30_000,
+    refetchInterval: 30_000,
   });
 };

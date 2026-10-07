@@ -1,7 +1,7 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import {
   View, Text, TextInput, TouchableOpacity, StyleSheet, KeyboardAvoidingView,
-  Platform, ActivityIndicator, ScrollView, Modal, FlatList, Image,
+  Platform, ActivityIndicator, ScrollView, Modal, FlatList, Image, Alert,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -18,6 +18,7 @@ type FieldErrors = Partial<Record<FieldKeys, string>>;
 export default function RegisterScreen() {
   const router = useRouter();
   const { login } = useAuth();
+  const scrollRef = useRef<ScrollView>(null);
 
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
@@ -41,9 +42,12 @@ export default function RegisterScreen() {
     let cancelled = false;
     const load = async () => {
       try {
+        console.log('[Register] Loading hostels...');
         const data = await getHostels();
+        console.log('[Register] Loaded hostels:', data.length);
         if (!cancelled) setHostels(data);
       } catch (err) {
+        console.error('[Register] Failed to load hostels:', err);
         if (!cancelled) {
           const { message } = parseApiError(err);
           setHostelsError(message);
@@ -65,34 +69,51 @@ export default function RegisterScreen() {
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) errs.email = 'Enter a valid email address';
     if (password.length < 6) errs.password = 'Password must be at least 6 characters';
     if (!hostelId) errs.hostelId = 'Please select a hostel';
-    if (rollNo.trim() && !/^\d{10}$/.test(rollNo.trim())) errs.rollNo = 'Roll Number must be exactly 10 digits';
     if (phone.trim() && !/^\d{10}$/.test(phone.trim())) errs.phone = 'Phone must be exactly 10 digits';
-    if (Object.keys(errs).length > 0) { setFieldErrors(errs); return false; }
+    if (Object.keys(errs).length > 0) {
+      setFieldErrors(errs);
+      console.log('[Register] Validation failed:', errs);
+      // Scroll to top so user sees the first error
+      scrollRef.current?.scrollTo({ y: 0, animated: true });
+      return false;
+    }
     setFieldErrors({});
     return true;
   };
 
   const handleRegister = async () => {
+    console.log('[Register] Create Account pressed');
     if (!validate()) return;
     setServerError(null);
     setLoading(true);
     try {
+      console.log('[Register] Sending registration request...');
       await postRegister({
         name: name.trim(), email: email.trim(), password, hostelId,
         rollNo: rollNo.trim() || undefined, phone: phone.trim() || undefined,
         roomNo: roomNo.trim() || undefined,
       });
+      console.log('[Register] Registration successful, logging in...');
       const result = await postLogin(email.trim(), password);
+      console.log('[Register] Login successful, setting auth state...');
       await login(result.accessToken, result.user);
+      console.log('[Register] Navigating to app...');
       router.replace('/(app)' as any);
-    } catch (err) {
+    } catch (err: any) {
+      console.error('[Register] Registration error:', err?.message || err);
       const { message, isNetwork } = parseApiError(err);
-      const status = (err as { response?: { status?: number } }).response?.status;
+      const status = err?.response?.status;
+      let errorMsg: string;
       if (!isNetwork && status === 409) {
-        setServerError('This email is already registered. Try logging in instead.');
+        errorMsg = 'This email is already registered. Try logging in instead.';
       } else {
-        setServerError(message);
+        errorMsg = message;
       }
+      setServerError(errorMsg);
+      // Scroll to top so the error box is visible
+      scrollRef.current?.scrollTo({ y: 0, animated: true });
+      // Also show an alert as fallback so user definitely sees the error
+      Alert.alert('Registration Failed', errorMsg);
     } finally {
       setLoading(false);
     }
@@ -100,7 +121,7 @@ export default function RegisterScreen() {
 
   return (
     <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
-      <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
+      <ScrollView ref={scrollRef} contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
         <View style={styles.header}>
           <Image source={require('../../assets/images/logo.png')} style={styles.logoImage} resizeMode="contain" />
           <Text style={styles.title}>Create Account</Text>

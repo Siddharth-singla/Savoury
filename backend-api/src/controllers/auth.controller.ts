@@ -8,7 +8,7 @@ const registerSchema = z.object({
   email: z.string().email(),
   password: z.string().min(6),
   hostelId: z.string().optional(),
-  rollNo: z.string().regex(/^\d{10}$/, 'Roll Number must be exactly 10 digits').optional(),
+  rollNo: z.string().max(20, 'Roll Number must be at most 20 characters').optional(),
   phone: z.string().regex(/^\d{10}$/, 'Phone must be exactly 10 digits').optional(),
   roomNo: z.string().optional(),
 });

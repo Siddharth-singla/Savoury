@@ -25,7 +25,7 @@ const getBaseUrl = (): string => {
 };
 
 const baseURL = getBaseUrl();
-const apiClient = axios.create({ baseURL, timeout: 30000 });
+const apiClient = axios.create({ baseURL, timeout: 60000 });
 console.log('[API Client] Initialized with baseURL:', baseURL);
 
 

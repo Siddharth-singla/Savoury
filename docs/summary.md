@@ -1,0 +1,15 @@
+- [Home](index.md)
+- [Criteria for Project Selection](criteria-for-project-selection.md)
+- Architecture
+  - [System Overview](architecture/overview.md)
+  - [Data Model](architecture/data-model.md)
+  - [Roles & Authorization](architecture/roles.md)
+- Components
+  - [Backend API](components/backend-api.md)
+  - [Web Console](components/web.md)
+  - [Mobile App](components/mobile.md)
+- [Setup & Running](setup.md)
+- Journals
+  - [Siddharth Singla](journals/1024170252-siddharth-singla/index.md)
+  - [Vineet Tripathi](journals/1024170253-vineet-tripathi/index.md)
+  - [Shivansh Sahu](journals/1024170249-shivansh-sahu/index.md)

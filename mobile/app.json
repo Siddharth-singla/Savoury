@@ -7,7 +7,6 @@
     "icon": "./assets/images/logo.png",
     "scheme": "savoury",
     "userInterfaceStyle": "automatic",
-
     "ios": {
       "supportsTablet": true
     },
@@ -47,6 +46,14 @@
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
-    }
+    },
+    "extra": {
+      "apiUrl": "http://localhost:3000",
+      "router": {},
+      "eas": {
+        "projectId": "9a29429a-5512-4f41-96e6-ca6547d26ae4"
+      }
+    },
+    "owner": "siddharthsingla"
   }
 }

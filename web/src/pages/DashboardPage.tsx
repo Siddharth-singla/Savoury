@@ -179,11 +179,18 @@ interface MealCardProps {
   isActive: boolean;
 }
 function MealCard({ hc, servingStart, servingEnd, isActive }: MealCardProps) {
-  const pct = hc.count > 0 ? Math.round((hc.count / hc.totalStudents) * 100) : 0;
+  // Real attendance: served out of expected (booked) students.
+  // Guard divide-by-zero; the donut fill is clamped to 100% even if
+  // served exceeds expected (e.g. OVERRIDE walk-ins), while the Actual
+  // number below still shows the true served count.
+  const expected = hc.count;
+  const served = hc.servedCount;
+  const rawPct = expected > 0 ? (served / expected) * 100 : 0;
+  const pct = Math.min(100, Math.round(rawPct));
 
-  const arcColor = (hc.locked || isActive) ? C.primary : 'rgba(45,27,14,0.15)';
-  const pctLabel = hc.locked ? 'Attended' : isActive ? 'Current' : 'Pending';
-  const pctDisplay = (!hc.locked && !isActive) ? '--' : `${pct}%`;
+  const arcColor = (hc.locked || isActive) ? C.primary : 'rgba(45,27,14,0.25)';
+  const pctLabel = 'Served';
+  const pctDisplay = `${pct}%`;
 
   const timeLabel = servingStart && servingEnd
     ? `${formatServingTime(servingStart)} – ${formatServingTime(servingEnd)}`
@@ -244,12 +251,12 @@ function MealCard({ hc, servingStart, servingEnd, isActive }: MealCardProps) {
         <StatRow
           icon={<Users size={14} strokeWidth={2} />}
           label="Expected"
-          value={hc.count}
+          value={expected}
         />
         <StatRow
           icon={<CheckCircle2 size={14} strokeWidth={2} />}
           label="Actual"
-          value={hc.locked || isActive ? hc.count : '—'}
+          value={served}
           valueColor={hc.locked ? C.success : isActive ? C.accent : C.textMuted}
         />
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, paddingTop: 10 }}>

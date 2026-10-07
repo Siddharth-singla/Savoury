@@ -17,17 +17,24 @@ import noticeRoutes from './routes/notice.routes';
 
 const app = express();
 
+// Global limiter guards against abuse but must not punish normal app usage.
+// A single IP can represent many legitimate clients (e.g. a whole hostel/
+// campus behind one NAT), so the ceiling is generous and env-configurable.
+// Default raised from 300 -> 2000 per 15 min. The /health endpoint is
+// exempt so uptime pingers never consume the budget.
 const globalLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 300, // Limit each IP to 300 requests per 15 minutes
+  max: Number(process.env.RATE_LIMIT_MAX) || 2000,
   standardHeaders: true,
   legacyHeaders: false,
+  skip: (req) => req.path === '/health',
   message: { error: 'Too many requests from this IP, please try again later.' },
 });
 
+// Auth stays strict — this is the limit that actually matters (brute-force).
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 30, // Stricter limit for auth routes
+  max: Number(process.env.AUTH_RATE_LIMIT_MAX) || 30,
   standardHeaders: true,
   legacyHeaders: false,
   message: { error: 'Too many authentication attempts, please try again later.' },

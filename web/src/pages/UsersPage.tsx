@@ -147,8 +147,11 @@ export default function UsersPage() {
       limit: pageSize,
       search: debouncedSearch || undefined,
     }),
-    staleTime: 10_000,
-    refetchInterval: 30_000,
+    // Keep the list fresh without hammering the API: no tight polling, and
+    // no refetch-on-focus storms. Manual "Retry" + mutation invalidations
+    // keep it up to date; this avoids tripping the server rate limiter.
+    staleTime: 60_000,
+    refetchOnWindowFocus: false,
   });
 
   const sortedUsers = useMemo(() => {
@@ -177,27 +180,30 @@ export default function UsersPage() {
     });
   }, [data?.users, debouncedSearch]);
 
-  /* ── 4 Stat Cards Counts ── */
-  const { data: totalStats } = useQuery({
-    queryKey: ['users-stat-total'],
-    queryFn: () => listUsers({ limit: 1 }),
-    staleTime: 30_000,
+  /* ── Stat Cards Counts ──
+     Derived from a single unfiltered list fetch (one request, cached for a
+     minute) instead of four separate count calls. This keeps the four cards
+     accurate regardless of the active role/search filter and dramatically
+     cuts request volume so the rate limiter isn't tripped during normal use.
+     The admin count now includes all hostel-admin roles (Warden/Co-Warden/
+     Caretaker), not just Warden. */
+  const { data: statsData } = useQuery({
+    queryKey: ['users-stats', hostelFilter],
+    queryFn: () => listUsers({ hostelId: hostelFilter || undefined, limit: pageSize }),
+    staleTime: 60_000,
+    refetchOnWindowFocus: false,
   });
-  const { data: dinersStats } = useQuery({
-    queryKey: ['users-stat-diners'],
-    queryFn: () => listUsers({ role: 'STUDENT', limit: 1 }),
-    staleTime: 30_000,
-  });
-  const { data: staffStats } = useQuery({
-    queryKey: ['users-stat-staff'],
-    queryFn: () => listUsers({ role: 'COUNTER_STAFF', limit: 1 }),
-    staleTime: 30_000,
-  });
-  const { data: adminStats } = useQuery({
-    queryKey: ['users-stat-admin'],
-    queryFn: () => listUsers({ role: 'WARDEN_ADMIN', limit: 1 }),
-    staleTime: 30_000,
-  });
+
+  const stats = useMemo(() => {
+    const all = statsData?.users ?? [];
+    const by = (pred: (r: string) => boolean) => all.filter(u => pred(u.role)).length;
+    return {
+      total: statsData?.total ?? all.length,
+      diners: by(r => r === 'STUDENT' || r === 'MESS_COMMITTEE'),
+      staff: by(r => r === 'COUNTER_STAFF'),
+      admins: by(r => HOSTEL_ADMIN_ROLES.includes(r) || r === 'SUPER_ADMIN'),
+    };
+  }, [statsData]);
 
   const roleMutation = useMutation({
     mutationFn: ({ id, role }: { id: string; role: string }) => updateRole(id, role),
@@ -272,7 +278,7 @@ export default function UsersPage() {
           </div>
           <div>
             <div style={{ fontSize: 30, fontWeight: 900, color: C.text, fontFamily: "'Georgia', serif", lineHeight: 1 }}>
-              {(totalStats?.total ?? data?.total ?? 0).toLocaleString()}
+              {stats.total.toLocaleString()}
             </div>
             <div style={{ fontSize: 12, color: C.textMuted, marginTop: 4, fontWeight: 500 }}>
               Active Users
@@ -303,7 +309,7 @@ export default function UsersPage() {
           </div>
           <div>
             <div style={{ fontSize: 30, fontWeight: 900, color: C.text, fontFamily: "'Georgia', serif", lineHeight: 1 }}>
-              {(dinersStats?.total ?? 0).toLocaleString()}
+              {stats.diners.toLocaleString()}
             </div>
             <div style={{ fontSize: 12, color: C.textMuted, marginTop: 4, fontWeight: 500 }}>
               Registered Students
@@ -334,7 +340,7 @@ export default function UsersPage() {
           </div>
           <div>
             <div style={{ fontSize: 30, fontWeight: 900, color: C.text, fontFamily: "'Georgia', serif", lineHeight: 1 }}>
-              {(staffStats?.total ?? 0).toLocaleString()}
+              {stats.staff.toLocaleString()}
             </div>
             <div style={{ fontSize: 12, color: C.textMuted, marginTop: 4, fontWeight: 500 }}>
               Mess Staff
@@ -365,7 +371,7 @@ export default function UsersPage() {
           </div>
           <div>
             <div style={{ fontSize: 30, fontWeight: 900, color: C.text, fontFamily: "'Georgia', serif", lineHeight: 1 }}>
-              {(adminStats?.total ?? 0).toLocaleString()}
+              {stats.admins.toLocaleString()}
             </div>
             <div style={{ fontSize: 12, color: C.textMuted, marginTop: 4, fontWeight: 500 }}>
               Administrators

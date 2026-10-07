@@ -81,17 +81,33 @@ export const getHeadcount = async (req: Request, res: Response, next: NextFuncti
 
     const results = await Promise.all(
       mealTypes.map(async (mt) => {
-        // Count students who explicitly opted OUT — everyone else is implicitly opted in
-        const optedOutCount = effectiveHostelId
-          ? await prisma.booking.count({
-              where: {
-                mealTypeId: mt.id,
-                date: { gte: dayStart, lte: dayEnd },
-                status: 'OPTED_OUT',
-                student: { hostelId: effectiveHostelId },
-              },
-            })
-          : 0;
+        // Count the opted-out and actually-served students in parallel.
+        const [optedOutCount, servedCount] = effectiveHostelId
+          ? await Promise.all([
+              // Students who explicitly opted OUT — everyone else is implicitly opted in
+              prisma.booking.count({
+                where: {
+                  mealTypeId: mt.id,
+                  date: { gte: dayStart, lte: dayEnd },
+                  status: 'OPTED_OUT',
+                  student: { hostelId: effectiveHostelId },
+                },
+              }),
+              // Students actually served (QR/tap-to-serve) — real attendance.
+              // Counts SERVED + OVERRIDE rows for this meal/date/hostel.
+              // DUPLICATE scans are never persisted, so they aren't counted.
+              prisma.attendance.count({
+                where: {
+                  result: { in: ['SERVED', 'OVERRIDE'] },
+                  booking: {
+                    mealTypeId: mt.id,
+                    date: { gte: dayStart, lte: dayEnd },
+                    student: { hostelId: effectiveHostelId },
+                  },
+                },
+              }),
+            ])
+          : [0, 0];
 
         const count = totalStudents - optedOutCount;
         const cutoffMoment = computeCutoffMoment(mt, targetDate);
@@ -101,13 +117,17 @@ export const getHeadcount = async (req: Request, res: Response, next: NextFuncti
           count,
           totalStudents,
           optedOutCount,
+          servedCount,
           locked: now > cutoffMoment,
           cutoffAt: cutoffMoment.toISOString(),
         };
       })
     );
 
-    res.status(200).json({ date: targetDate.toISOString(), headcounts: results });
+    // Day total of students actually served across all meals.
+    const totalServed = results.reduce((sum, r) => sum + r.servedCount, 0);
+
+    res.status(200).json({ date: targetDate.toISOString(), headcounts: results, totalServed });
   } catch (err) {
     next(err);
   }

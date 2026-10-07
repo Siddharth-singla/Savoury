@@ -525,6 +525,15 @@ export default function UsersPage() {
                       const roomDisplay = u.roomNo ? `Room ${u.roomNo}` : '—';
                       const roleStyle = getRoleStyle(u.role);
 
+                      // Role is NOT changeable from the inline control when:
+                      //  - the row is a Super Admin (never demoted from this UI), or
+                      //  - the row is a hostel-admin (Warden/Co-Warden/Caretaker)
+                      //    and the viewer is not a Super Admin.
+                      // Only a Super Admin may change a hostel-admin's role.
+                      const roleLocked =
+                        u.role === 'SUPER_ADMIN' ||
+                        (HOSTEL_ADMIN_ROLES.includes(u.role) && !isSuperAdmin);
+
                       return (
                         <tr
                           key={u.id}
@@ -551,43 +560,63 @@ export default function UsersPage() {
 
                           {/* ROLE & ACCESS column */}
                           <td style={{ padding: '16px 24px' }}>
-                            <div style={{ position: 'relative', display: 'inline-block' }}>
-                              <select
-                                value={u.role}
-                                disabled={roleMutation.isPending}
-                                onChange={e => roleMutation.mutate({ id: u.id, role: e.target.value })}
-                                className="role-pill-select"
-                                style={{
-                                  background: roleStyle.bg,
-                                  border: roleStyle.border,
-                                  borderRadius: 8,
-                                  color: roleStyle.color,
-                                  fontSize: 11,
-                                  fontWeight: 700,
-                                  letterSpacing: '0.04em',
-                                  textTransform: 'uppercase',
-                                  padding: '6px 24px 6px 12px',
-                                  cursor: 'pointer',
-                                  outline: 'none',
-                                  appearance: 'none',
-                                  fontFamily: 'inherit',
-                                  transition: 'opacity 0.15s',
-                                }}
-                              >
-                                {ROLES.map(r => (
-                                  <option key={r} value={r} style={{ background: C.surface, color: C.text }}>
-                                    {getRoleLabel(r)}
-                                  </option>
-                                ))}
-                              </select>
+                            {roleLocked ? (
+                              // Static, non-editable badge — role can only be
+                              // changed by a Super Admin (and never for a Super Admin).
                               <span style={{
-                                position: 'absolute', right: 8, top: '50%',
-                                transform: 'translateY(-50%)', pointerEvents: 'none',
-                                fontSize: 10, color: roleStyle.color,
+                                display: 'inline-block',
+                                background: roleStyle.bg,
+                                border: roleStyle.border,
+                                borderRadius: 8,
+                                color: roleStyle.color,
+                                fontSize: 11,
+                                fontWeight: 700,
+                                letterSpacing: '0.04em',
+                                textTransform: 'uppercase',
+                                padding: '6px 12px',
+                                fontFamily: 'inherit',
                               }}>
-                                ▾
+                                {getRoleLabel(u.role)}
                               </span>
-                            </div>
+                            ) : (
+                              <div style={{ position: 'relative', display: 'inline-block' }}>
+                                <select
+                                  value={u.role}
+                                  disabled={roleMutation.isPending}
+                                  onChange={e => roleMutation.mutate({ id: u.id, role: e.target.value })}
+                                  className="role-pill-select"
+                                  style={{
+                                    background: roleStyle.bg,
+                                    border: roleStyle.border,
+                                    borderRadius: 8,
+                                    color: roleStyle.color,
+                                    fontSize: 11,
+                                    fontWeight: 700,
+                                    letterSpacing: '0.04em',
+                                    textTransform: 'uppercase',
+                                    padding: '6px 24px 6px 12px',
+                                    cursor: 'pointer',
+                                    outline: 'none',
+                                    appearance: 'none',
+                                    fontFamily: 'inherit',
+                                    transition: 'opacity 0.15s',
+                                  }}
+                                >
+                                  {ROLES.map(r => (
+                                    <option key={r} value={r} style={{ background: C.surface, color: C.text }}>
+                                      {getRoleLabel(r)}
+                                    </option>
+                                  ))}
+                                </select>
+                                <span style={{
+                                  position: 'absolute', right: 8, top: '50%',
+                                  transform: 'translateY(-50%)', pointerEvents: 'none',
+                                  fontSize: 10, color: roleStyle.color,
+                                }}>
+                                  ▾
+                                </span>
+                              </div>
+                            )}
                           </td>
 
                           {/* LOCATION column */}

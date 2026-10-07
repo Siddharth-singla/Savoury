@@ -15,6 +15,9 @@
       "android": {
         "buildType": "apk"
       },
+      "env": {
+        "EXPO_PUBLIC_API_URL": "https://savoury-api.onrender.com"
+      },
       "autoIncrement": true
     }
   },

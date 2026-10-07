@@ -1,50 +1,77 @@
-# Welcome to your Expo app 👋
+# Savoury — Hostel Mess Management System
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+**UCS503: Software Engineering (Project), 2026-27 ODD — TIET Patiala**
 
-## Get started
+Team:
 
-1. Install dependencies
+- `1024170252` Siddharth Singla
+- `1024170253` Vineet Tripathi
+- `1024170249` Shivansh Sahu
 
-   ```bash
-   npm install
-   ```
+Savoury is a hostel mess (dining-hall) management platform: a shared
+backend API with a student mobile app and an admin/staff web console
+for per-meal opt-in/opt-out booking, cutoff-driven locking,
+QR/roster-based attendance, and a wallet ledger with top-ups and
+semester-end cashouts.
 
-2. Start the app
+## Repository structure
 
-   ```bash
-   npx expo start
-   ```
+This repository follows the UCS503P project template layout:
 
-In the output, you'll find options to open the app in a
+| Folder | Contents |
+|--------|----------|
+| `project-proposal/` | Project Proposal (LaTeX source `main.tex`, `main.pdf`, PRD) |
+| `project-report-prototype-stage/` | Project Report — Prototype Stage |
+| `project-report-final/` | Project Report — Final |
+| `journals/` | Weekly journals, one folder per team member |
+| `docs/` | Documentation (built with `mkdocs`) |
+| `code/` | Source-code root — see [`code/README.md`](code/README.md) |
 
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
+The source code lives in top-level component folders referenced from
+`code/` (`backend-api/`, `web/`, `mobile/`), kept in place so the
+existing build and deployment pipelines continue to work.
 
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
+## Reports
 
-## Get a fresh project
+The three reports are maintained in their respective folders:
+*a)* Project Proposal, *b)* Project Report Prototype Stage, and
+*c)* Project Report Final.
 
-When you're ready, run:
+## Journals
 
-```bash
-npm run reset-project
+Journals are stacked under `journals/`, one folder per team member.
+
+## Docs
+
+The `docs/` folder is an organised collection of markdown files built
+with the [`mkdocs`](https://www.mkdocs.org/) backend. Any commit to the
+`main` (or `master`) branch triggers a CI/CD build and deployment of the
+documentation, including the journals.
+
+For a local preview of the docs:
+
+``` shell
+make docs
 ```
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+### Local environment for docs
 
-## Learn more
+``` shell
+pip install mkdocs mkdocs-material mkdocs-material-extensions \
+  mkdocs-literate-nav mkdocs-section-index \
+  mkdocs-git-revision-date-localized-plugin \
+  mkdocs-git-authors-plugin pymdown-extensions
+```
 
-To learn more about developing your project with Expo, look at the following resources:
+## Running the application
 
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
+``` shell
+# Backend API
+cd backend-api && npm install && npx prisma generate && npm run dev
 
-## Join the community
+# Web console
+cd web && npm install && npm run dev
 
-Join our community of developers creating universal apps.
-
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+# Mobile app
+cd mobile && npm install && npx expo start
+```

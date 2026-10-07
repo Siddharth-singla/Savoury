@@ -1,7 +1,16 @@
 import { Request, Response, NextFunction } from 'express';
 import { z } from 'zod';
+import { Role } from '@prisma/client';
 import bcrypt from 'bcrypt';
 import prisma from '../db';
+import {
+  ALL_ROLES,
+  isHostelAdmin,
+  canManageMessStaff,
+  isStudentRole,
+} from '../constants/roles';
+
+const ROLE_ENUM = z.enum(ALL_ROLES as unknown as [string, ...string[]]);
 
 const listUsersSchema = z.object({
   role: z.string().optional(),
@@ -12,7 +21,7 @@ const listUsersSchema = z.object({
 });
 
 const updateRoleSchema = z.object({
-  role: z.enum(['STUDENT', 'MESS_COMMITTEE', 'WARDEN_ADMIN', 'COUNTER_STAFF', 'SUPER_ADMIN']),
+  role: ROLE_ENUM,
 });
 
 const updateUserSchema = z.object({
@@ -21,7 +30,7 @@ const updateUserSchema = z.object({
   rollNo: z.string().optional().nullable(),
   phone: z.string().optional().nullable(),
   roomNo: z.string().optional().nullable(),
-  role: z.enum(['STUDENT', 'MESS_COMMITTEE', 'WARDEN_ADMIN', 'COUNTER_STAFF', 'SUPER_ADMIN']).optional(),
+  role: ROLE_ENUM.optional(),
   password: z.string().min(6).optional(),
 });
 
@@ -39,7 +48,7 @@ const createUserSchema = z.object({
   name: z.string().min(2),
   email: z.string().email().endsWith('@thapar.edu', 'College email (@thapar.edu) is required'),
   password: z.string().min(6),
-  role: z.enum(['STUDENT', 'MESS_COMMITTEE', 'WARDEN_ADMIN', 'COUNTER_STAFF', 'SUPER_ADMIN']).default('STUDENT'),
+  role: ROLE_ENUM.default('STUDENT'),
   hostelId: z.string().optional().nullable(),
   rollNo: z.string().optional().nullable(),
   phone: z.string().optional().nullable(),
@@ -92,8 +101,9 @@ export const listUsers = async (req: Request, res: Response, next: NextFunction)
     const where: Record<string, unknown> = {};
     if (role) where.role = role;
 
-    // WARDEN_ADMIN is always scoped to their own hostel, ignoring any hostelId param
-    if (callerRole === 'WARDEN_ADMIN') {
+    // Hostel admins (Warden/Co-Warden/Caretaker) are always scoped to their own
+    // hostel, ignoring any hostelId param.
+    if (isHostelAdmin(callerRole)) {
       where.hostelId = callerHostelId;
     } else if (callerRole === 'SUPER_ADMIN' && hostelId) {
       // SUPER_ADMIN may optionally filter by hostelId
@@ -136,11 +146,42 @@ export const createUser = async (req: Request, res: Response, next: NextFunction
     const data = createUserSchema.parse(req.body);
     const { hostelId: callerHostelId, role: callerRole } = req.user!;
 
-    let targetHostelId = data.hostelId;
-    if (callerRole === 'WARDEN_ADMIN') {
+    let targetHostelId = data.hostelId ?? null;
+
+    // ── Authorization: who can create which role ──────────────────
+    if (isHostelAdmin(callerRole)) {
+      // Hostel admins always create within their OWN hostel.
       targetHostelId = callerHostelId;
-      if (data.role === 'SUPER_ADMIN') {
-        return res.status(403).json({ error: 'Wardens cannot create Super Admins' });
+
+      // The only account type a hostel admin may create is Mess Staff
+      // (COUNTER_STAFF) — and only Warden/Co-Warden can, not Caretaker.
+      if (data.role !== 'COUNTER_STAFF') {
+        return res.status(403).json({
+          error: 'You can only add Mess Staff accounts. Wardens, co-wardens, caretakers and students are managed elsewhere.',
+        });
+      }
+      if (!canManageMessStaff(callerRole)) {
+        return res.status(403).json({ error: 'Caretakers cannot add Mess Staff.' });
+      }
+    } else if (callerRole !== 'SUPER_ADMIN') {
+      // Any other role has no business creating users.
+      return res.status(403).json({ error: 'Forbidden: Insufficient privileges' });
+    }
+
+    // ── hostelId requirement for hostel-bound roles ───────────────
+    const HOSTEL_BOUND_ROLES = ['WARDEN_ADMIN', 'CO_WARDEN', 'CARETAKER', 'COUNTER_STAFF', 'MESS_COMMITTEE', 'STUDENT'];
+    if (data.role !== 'SUPER_ADMIN' && HOSTEL_BOUND_ROLES.includes(data.role) && !targetHostelId) {
+      return res.status(400).json({ error: 'A hostel must be selected for this role.' });
+    }
+
+    // ── Per-hostel caps: exactly 1 Warden + 1 Co-Warden ───────────
+    if ((data.role === 'WARDEN_ADMIN' || data.role === 'CO_WARDEN') && targetHostelId) {
+      const existing = await prisma.user.count({
+        where: { hostelId: targetHostelId, role: data.role as Role },
+      });
+      if (existing >= 1) {
+        const label = data.role === 'WARDEN_ADMIN' ? 'Warden' : 'Co-Warden';
+        return res.status(409).json({ error: `This hostel already has a ${label}. Remove the existing one first.` });
       }
     }
 
@@ -155,7 +196,7 @@ export const createUser = async (req: Request, res: Response, next: NextFunction
         name: data.name,
         email: data.email,
         passwordHash,
-        role: data.role,
+        role: data.role as Role,
         hostelId: targetHostelId,
         rollNo: data.rollNo || null,
         phone: data.phone || null,
@@ -186,12 +227,19 @@ export const updateUser = async (req: Request, res: Response, next: NextFunction
     });
     if (!targetUser) return res.status(404).json({ error: 'User not found' });
 
-    if (callerRole === 'WARDEN_ADMIN') {
+    if (isHostelAdmin(callerRole)) {
       if (targetUser.hostelId !== callerHostelId) {
         return res.status(403).json({ error: 'You can only manage users in your own hostel' });
       }
-      if (data.role === 'SUPER_ADMIN') {
-        return res.status(403).json({ error: 'Wardens cannot assign the Super Admin role' });
+      // Hostel admins (Warden/Co-Warden/Caretaker) cannot manage each other
+      // or themselves — only the Super Admin can touch those accounts.
+      if (isHostelAdmin(targetUser.role)) {
+        return res.status(403).json({ error: 'Only a Super Admin can manage wardens, co-wardens, and caretakers.' });
+      }
+      // They may only assign student-type roles or Mess Staff — never
+      // elevate anyone to an admin role.
+      if (data.role !== undefined && !isStudentRole(data.role) && data.role !== 'COUNTER_STAFF') {
+        return res.status(403).json({ error: 'You cannot assign that role.' });
       }
     }
 
@@ -228,25 +276,30 @@ export const updateUserRole = async (req: Request, res: Response, next: NextFunc
     const { role } = updateRoleSchema.parse(req.body);
     const { hostelId: callerHostelId, role: callerRole } = req.user!;
 
-    // WARDEN_ADMIN can only modify users within their hostel
-    if (callerRole === 'WARDEN_ADMIN') {
+    // Hostel admins (Warden/Co-Warden/Caretaker) may only toggle students
+    // between STUDENT and MESS_COMMITTEE, within their own hostel. They
+    // cannot touch other admins or assign privileged roles.
+    if (isHostelAdmin(callerRole)) {
       const targetUser = await prisma.user.findUnique({
         where: { id },
-        select: { hostelId: true },
+        select: { hostelId: true, role: true },
       });
       if (!targetUser) return res.status(404).json({ error: 'User not found' });
       if (targetUser.hostelId !== callerHostelId) {
         return res.status(403).json({ error: 'You can only manage users in your own hostel' });
       }
-      // Wardens cannot elevate anyone to SUPER_ADMIN
-      if (role === 'SUPER_ADMIN') {
-        return res.status(403).json({ error: 'Wardens cannot assign the Super Admin role' });
+      if (isHostelAdmin(targetUser.role)) {
+        return res.status(403).json({ error: 'Only a Super Admin can manage wardens, co-wardens, and caretakers.' });
+      }
+      // The inline role control is only for toggling students ↔ mess committee.
+      if (!isStudentRole(targetUser.role) || !isStudentRole(role)) {
+        return res.status(403).json({ error: 'You can only switch student accounts between Student and Mess Committee.' });
       }
     }
 
     const user = await prisma.user.update({
       where: { id },
-      data: { role },
+      data: { role: role as Role },
       select: { id: true, name: true, email: true, role: true, hostelId: true },
     });
 
@@ -272,12 +325,14 @@ export const deleteUser = async (req: Request, res: Response, next: NextFunction
     });
     if (!targetUser) return res.status(404).json({ error: 'User not found' });
 
-    if (callerRole === 'WARDEN_ADMIN') {
+    if (isHostelAdmin(callerRole)) {
       if (targetUser.hostelId !== callerHostelId) {
         return res.status(403).json({ error: 'You can only delete users in your own hostel' });
       }
-      if (targetUser.role === 'SUPER_ADMIN' || targetUser.role === 'WARDEN_ADMIN') {
-        return res.status(403).json({ error: 'Wardens cannot delete other admins' });
+      // Hostel admins cannot delete Super Admins or other hostel admins
+      // (Warden/Co-Warden/Caretaker) — only the Super Admin can.
+      if (targetUser.role === 'SUPER_ADMIN' || isHostelAdmin(targetUser.role)) {
+        return res.status(403).json({ error: 'Only a Super Admin can delete wardens, co-wardens, and caretakers.' });
       }
     }
 

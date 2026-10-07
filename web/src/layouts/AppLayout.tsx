@@ -13,13 +13,16 @@ import {
 
 interface NavItem { to: string; label: string; icon: React.ReactNode; allowedRoles: string[] }
 
+// Warden, Co-Warden and Caretaker share an identical feature set.
+const HOSTEL_ADMINS = ['WARDEN_ADMIN', 'CO_WARDEN', 'CARETAKER'];
+
 const NAV_ITEMS: NavItem[] = [
-  { to: '/checkin',   label: 'Check-In',   icon: <UserCheck size={18} strokeWidth={1.8} />, allowedRoles: ['COUNTER_STAFF', 'MESS_COMMITTEE', 'WARDEN_ADMIN'] },
-  { to: '/dashboard', label: 'Headcount',  icon: <Users size={18} strokeWidth={1.8} />,     allowedRoles: ['MESS_COMMITTEE', 'WARDEN_ADMIN'] },
-  { to: '/menu',      label: 'Menu',       icon: <UtensilsCrossed size={18} strokeWidth={1.8} />, allowedRoles: ['MESS_COMMITTEE', 'WARDEN_ADMIN'] },
-  { to: '/users',     label: 'Users',      icon: <UserCog size={18} strokeWidth={1.8} />,   allowedRoles: ['WARDEN_ADMIN', 'SUPER_ADMIN'] },
-  { to: '/wallet',    label: 'Wallet',     icon: <Wallet size={18} strokeWidth={1.8} />,    allowedRoles: ['WARDEN_ADMIN'] },
-  { to: '/notices',   label: 'Notices',    icon: <Megaphone size={18} strokeWidth={1.8} />, allowedRoles: ['MESS_COMMITTEE', 'WARDEN_ADMIN'] },
+  { to: '/checkin',   label: 'Check-In',   icon: <UserCheck size={18} strokeWidth={1.8} />, allowedRoles: ['COUNTER_STAFF', 'MESS_COMMITTEE', ...HOSTEL_ADMINS] },
+  { to: '/dashboard', label: 'Headcount',  icon: <Users size={18} strokeWidth={1.8} />,     allowedRoles: ['MESS_COMMITTEE', ...HOSTEL_ADMINS] },
+  { to: '/menu',      label: 'Menu',       icon: <UtensilsCrossed size={18} strokeWidth={1.8} />, allowedRoles: ['MESS_COMMITTEE', ...HOSTEL_ADMINS] },
+  { to: '/users',     label: 'Users',      icon: <UserCog size={18} strokeWidth={1.8} />,   allowedRoles: [...HOSTEL_ADMINS, 'SUPER_ADMIN'] },
+  { to: '/wallet',    label: 'Wallet',     icon: <Wallet size={18} strokeWidth={1.8} />,    allowedRoles: [...HOSTEL_ADMINS] },
+  { to: '/notices',   label: 'Notices',    icon: <Megaphone size={18} strokeWidth={1.8} />, allowedRoles: ['MESS_COMMITTEE', ...HOSTEL_ADMINS] },
   { to: '/hostels',   label: 'Hostels',    icon: <Building2 size={18} strokeWidth={1.8} />, allowedRoles: ['SUPER_ADMIN'] },
 ];
 

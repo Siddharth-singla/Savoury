@@ -86,9 +86,20 @@ export const ROLE_HIERARCHY: Record<string, number> = {
   COUNTER_STAFF: 1,
   STUDENT: 1,
   MESS_COMMITTEE: 2,
+  CARETAKER: 3,
+  CO_WARDEN: 3,
   WARDEN_ADMIN: 3,
   SUPER_ADMIN: 4,
 };
+
+/** The three hostel-admin roles that behave identically to a Warden. */
+export const HOSTEL_ADMIN_ROLES = ['WARDEN_ADMIN', 'CO_WARDEN', 'CARETAKER'];
+
+/** Only Warden & Co-Warden may add Mess Staff. */
+export const MESS_STAFF_MANAGER_ROLES = ['WARDEN_ADMIN', 'CO_WARDEN'];
+
+export const isHostelAdminRole = (role?: string | null) =>
+  !!role && HOSTEL_ADMIN_ROLES.includes(role);
 
 export const hasRole = (userRole: string, minRole: string) =>
   (ROLE_HIERARCHY[userRole] ?? 0) >= (ROLE_HIERARCHY[minRole] ?? 0);

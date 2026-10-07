@@ -15,6 +15,9 @@ import NoticesPage from './pages/NoticesPage';
 
 const qc = new QueryClient({ defaultOptions: { queries: { retry: 1 } } });
 
+// Warden, Co-Warden and Caretaker share an identical feature set.
+const HOSTEL_ADMINS = ['WARDEN_ADMIN', 'CO_WARDEN', 'CARETAKER'];
+
 function NotAuthorized() {
   return (
     <div style={{ display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', height:'100vh', gap:16, background:'#0f172a', color:'#f1f5f9' }}>
@@ -50,27 +53,27 @@ export default function App() {
             }>
               <Route index element={<IndexRedirect />} />
               <Route path="/checkin" element={
-                <ProtectedRoute allowedRoles={['COUNTER_STAFF','MESS_COMMITTEE','WARDEN_ADMIN']}>
+                <ProtectedRoute allowedRoles={['COUNTER_STAFF','MESS_COMMITTEE',...HOSTEL_ADMINS]}>
                   <CheckInPage />
                 </ProtectedRoute>
               } />
               <Route path="/dashboard" element={
-                <ProtectedRoute allowedRoles={['MESS_COMMITTEE','WARDEN_ADMIN']}>
+                <ProtectedRoute allowedRoles={['MESS_COMMITTEE',...HOSTEL_ADMINS]}>
                   <DashboardPage />
                 </ProtectedRoute>
               } />
               <Route path="/menu" element={
-                <ProtectedRoute allowedRoles={['MESS_COMMITTEE','WARDEN_ADMIN']}>
+                <ProtectedRoute allowedRoles={['MESS_COMMITTEE',...HOSTEL_ADMINS]}>
                   <MenuPage />
                 </ProtectedRoute>
               } />
               <Route path="/users" element={
-                <ProtectedRoute allowedRoles={['WARDEN_ADMIN','SUPER_ADMIN']}>
+                <ProtectedRoute allowedRoles={[...HOSTEL_ADMINS,'SUPER_ADMIN']}>
                   <UsersPage />
                 </ProtectedRoute>
               } />
               <Route path="/wallet" element={
-                <ProtectedRoute allowedRoles={['WARDEN_ADMIN']}>
+                <ProtectedRoute allowedRoles={[...HOSTEL_ADMINS]}>
                   <WalletPage />
                 </ProtectedRoute>
               } />
@@ -80,7 +83,7 @@ export default function App() {
                 </ProtectedRoute>
               } />
               <Route path="/notices" element={
-                <ProtectedRoute allowedRoles={['MESS_COMMITTEE','WARDEN_ADMIN']}>
+                <ProtectedRoute allowedRoles={['MESS_COMMITTEE',...HOSTEL_ADMINS]}>
                   <NoticesPage />
                 </ProtectedRoute>
               } />

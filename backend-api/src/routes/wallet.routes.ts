@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import * as walletController from '../controllers/wallet.controller';
 import { authenticate, authorizeRoles } from '../middleware/auth.middleware';
+import { HOSTEL_ADMIN_ROLES } from '../constants/roles';
 
 const router = Router();
 
@@ -26,22 +27,22 @@ router.post(
   walletController.requestCashout
 );
 
-// Admin/Warden endpoints
+// Admin/Warden endpoints (Warden, Co-Warden, Caretaker)
 router.post(
   '/topup',
-  authorizeRoles('WARDEN_ADMIN'),
+  authorizeRoles(...HOSTEL_ADMIN_ROLES),
   walletController.topupWallet
 );
 
 router.get(
   '/cashout-requests',
-  authorizeRoles('WARDEN_ADMIN'),
+  authorizeRoles(...HOSTEL_ADMIN_ROLES),
   walletController.getCashoutRequests
 );
 
 router.post(
   '/cashout-requests/:id/resolve',
-  authorizeRoles('WARDEN_ADMIN'),
+  authorizeRoles(...HOSTEL_ADMIN_ROLES),
   walletController.resolveCashoutRequest
 );
 

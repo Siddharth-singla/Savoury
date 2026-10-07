@@ -35,6 +35,8 @@ function timeAgo(dateStr: string): string {
 function roleLabel(role: string): string {
   switch (role) {
     case 'WARDEN_ADMIN': return 'Warden';
+    case 'CO_WARDEN': return 'Co-Warden';
+    case 'CARETAKER': return 'Caretaker';
     case 'MESS_COMMITTEE': return 'Mess Committee';
     case 'SUPER_ADMIN': return 'Admin';
     default: return role.replace(/_/g, ' ');
@@ -43,7 +45,10 @@ function roleLabel(role: string): string {
 
 function roleBadgeColor(role: string): { bg: string; text: string } {
   switch (role) {
-    case 'WARDEN_ADMIN': return { bg: 'rgba(124,58,30,0.10)', text: '#7c3a1e' };
+    case 'WARDEN_ADMIN':
+    case 'CO_WARDEN':
+    case 'CARETAKER':
+      return { bg: 'rgba(124,58,30,0.10)', text: '#7c3a1e' };
     case 'MESS_COMMITTEE': return { bg: 'rgba(58,107,58,0.10)', text: '#3a6b3a' };
     default: return { bg: 'rgba(0,0,0,0.06)', text: C.textMuted };
   }

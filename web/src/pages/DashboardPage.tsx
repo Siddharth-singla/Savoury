@@ -24,10 +24,29 @@ const C = {
   danger:      '#8b1a1a',
 };
 
-function dateStr(d: Date) { return d.toISOString().slice(0, 10); }
+const IST_OFFSET_MS = (5 * 60 + 30) * 60 * 1000; // UTC+5:30
 
-function formatDateLabel(d: Date) {
-  return d.toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' }).toUpperCase();
+/**
+ * The IST calendar date (YYYY-MM-DD) for a given instant, regardless of the
+ * viewer's local timezone. Meals/bookings are keyed to the IST calendar day,
+ * so "today" must be the IST day — not the browser's local or UTC day.
+ * (At e.g. 03:10 IST the UTC date is still the previous day, which previously
+ * made the dashboard query the wrong day and show every meal as Final.)
+ */
+function istDateStr(d: Date): string {
+  return new Date(d.getTime() + IST_OFFSET_MS).toISOString().slice(0, 10);
+}
+
+/** ISO instant for UTC-midnight of the given IST calendar date string. */
+function istDateToUtcMidnightIso(dateStr: string): string {
+  return new Date(dateStr + 'T00:00:00.000Z').toISOString();
+}
+
+function formatDateLabel(dateStr: string) {
+  // dateStr is YYYY-MM-DD; render it as a UTC date so it isn't shifted.
+  return new Date(dateStr + 'T00:00:00.000Z')
+    .toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric', timeZone: 'UTC' })
+    .toUpperCase();
 }
 
 function formatCutoff(iso: string) {
@@ -277,12 +296,16 @@ function MealCard({ hc, servingStart, servingEnd, isActive }: MealCardProps) {
 
 /* ── Page ── */
 export default function DashboardPage() {
-  const today = new Date();
-  const tomorrow = new Date(today); tomorrow.setDate(today.getDate() + 1);
+  const now = new Date();
+  // IST calendar dates (YYYY-MM-DD) for today/tomorrow — independent of the
+  // viewer's local timezone, so the correct day is queried even in the
+  // early-morning IST window where UTC is still the previous day.
+  const todayStr = istDateStr(now);
+  const tomorrowStr = istDateStr(new Date(now.getTime() + 24 * 60 * 60 * 1000));
 
   const [viewDate, setViewDate] = useState<'today' | 'tomorrow'>('today');
-  const targetDate = viewDate === 'today' ? today : tomorrow;
-  const isoDate = new Date(dateStr(targetDate)).toISOString();
+  const targetDateStr = viewDate === 'today' ? todayStr : tomorrowStr;
+  const isoDate = istDateToUtcMidnightIso(targetDateStr);
 
   const { data, isLoading, isError, error, refetch } = useQuery({
     queryKey: ['headcount', isoDate],
@@ -297,19 +320,22 @@ export default function DashboardPage() {
     staleTime: Infinity,
   });
 
-  /* Determine which meal is currently active */
+  /* Determine which meal is currently being served (IST), only for "today". */
   const activeMealTypeId = useMemo(() => {
-    if (!mealTypes) return null;
-    const now = new Date();
+    if (!mealTypes || viewDate !== 'today') return null;
+    // Current time as minutes-since-midnight in IST, regardless of the
+    // viewer's local timezone (matches how serving windows are configured).
+    const istNow = new Date(Date.now() + IST_OFFSET_MS);
+    const nowMin = istNow.getUTCHours() * 60 + istNow.getUTCMinutes();
     const active = mealTypes.find((mt: any) => {
       const [sh, sm] = mt.servingStart.split(':').map(Number);
       const [eh, em] = mt.servingEnd.split(':').map(Number);
-      const start = new Date(now.getFullYear(), now.getMonth(), now.getDate(), sh, sm);
-      const end = new Date(now.getFullYear(), now.getMonth(), now.getDate(), eh, em);
-      return now >= start && now <= end;
+      const startMin = sh * 60 + sm;
+      const endMin = eh * 60 + em;
+      return nowMin >= startMin && nowMin <= endMin;
     });
     return active?.id ?? null;
-  }, [mealTypes]);
+  }, [mealTypes, viewDate]);
 
   const mealTypeMap = useMemo(() => {
     if (!mealTypes) return {};
@@ -390,7 +416,7 @@ export default function DashboardPage() {
             boxShadow: '0 1px 4px rgba(0,0,0,0.06)',
           }}>
             <CalendarDays size={14} strokeWidth={2} color={C.textMuted} />
-            {formatDateLabel(targetDate)}
+            {formatDateLabel(targetDateStr)}
           </div>
           <div style={{
             display: 'flex', gap: 0,

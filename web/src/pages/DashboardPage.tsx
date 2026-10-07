@@ -137,18 +137,20 @@ function DonutChart({ pct, size = 160, strokeWidth = 10, color, label, value }: 
   );
 }
 
-/* ── Status badge ── */
-function StatusBadge({ locked, isActive }: { locked: boolean; isActive: boolean }) {
-  if (locked) {
+/* ── Status badge ──
+   Lifecycle (today): Upcoming → Final (cutoff passed) → Active (serving) → Over.
+   "Over" takes top priority once the serving window has ended. */
+function StatusBadge({ locked, isActive, isOver }: { locked: boolean; isActive: boolean; isOver: boolean }) {
+  if (isOver) {
     return (
       <span style={{
         display: 'inline-flex', alignItems: 'center', gap: 5,
         padding: '3px 10px', borderRadius: 20,
-        background: C.successLight, border: `1px solid rgba(58,107,58,0.25)`,
-        fontSize: 11, fontWeight: 700, color: C.success,
+        background: C.surface2, border: `1px solid ${C.border}`,
+        fontSize: 11, fontWeight: 700, color: C.textMuted,
         fontFamily: "'Inter', sans-serif", letterSpacing: '0.04em',
       }}>
-        Final
+        Over
       </span>
     );
   }
@@ -163,6 +165,20 @@ function StatusBadge({ locked, isActive }: { locked: boolean; isActive: boolean 
       }}>
         <span style={{ width: 6, height: 6, borderRadius: '50%', background: C.accent, display: 'inline-block' }} />
         Active
+      </span>
+    );
+  }
+  if (locked) {
+    // Cutoff passed but serving hasn't ended yet — bookings are final.
+    return (
+      <span style={{
+        display: 'inline-flex', alignItems: 'center', gap: 5,
+        padding: '3px 10px', borderRadius: 20,
+        background: C.successLight, border: `1px solid rgba(58,107,58,0.25)`,
+        fontSize: 11, fontWeight: 700, color: C.success,
+        fontFamily: "'Inter', sans-serif", letterSpacing: '0.04em',
+      }}>
+        Final
       </span>
     );
   }
@@ -196,8 +212,9 @@ interface MealCardProps {
   servingStart?: string;
   servingEnd?: string;
   isActive: boolean;
+  isToday: boolean;
 }
-function MealCard({ hc, servingStart, servingEnd, isActive }: MealCardProps) {
+function MealCard({ hc, servingStart, servingEnd, isActive, isToday }: MealCardProps) {
   // Real attendance: served out of expected (booked) students.
   // Guard divide-by-zero; the donut fill is clamped to 100% even if
   // served exceeds expected (e.g. OVERRIDE walk-ins), while the Actual
@@ -206,6 +223,17 @@ function MealCard({ hc, servingStart, servingEnd, isActive }: MealCardProps) {
   const served = hc.servedCount;
   const rawPct = expected > 0 ? (served / expected) * 100 : 0;
   const pct = Math.min(100, Math.round(rawPct));
+
+  // "Over": today's serving window has fully ended (compared in IST, the
+  // timezone the serving times are configured in). Only applies to today —
+  // a future day's meal is never "over".
+  const isOver = (() => {
+    if (!isToday || !servingEnd) return false;
+    const istNow = new Date(Date.now() + IST_OFFSET_MS);
+    const nowMin = istNow.getUTCHours() * 60 + istNow.getUTCMinutes();
+    const [eh, em] = servingEnd.split(':').map(Number);
+    return nowMin > eh * 60 + em;
+  })();
 
   const arcColor = (hc.locked || isActive) ? C.primary : 'rgba(45,27,14,0.25)';
   const pctLabel = 'Served';
@@ -235,7 +263,7 @@ function MealCard({ hc, servingStart, servingEnd, isActive }: MealCardProps) {
             <p style={{ fontSize: 12, color: C.textMuted, margin: 0, fontFamily: "'Inter', sans-serif" }}>{timeLabel}</p>
           )}
         </div>
-        <StatusBadge locked={hc.locked} isActive={isActive} />
+        <StatusBadge locked={hc.locked} isActive={isActive} isOver={isOver} />
       </div>
 
       {/* Image + Donut row */}
@@ -530,6 +558,7 @@ export default function DashboardPage() {
                     servingStart={mt?.servingStart}
                     servingEnd={mt?.servingEnd}
                     isActive={hc.mealTypeId === activeMealTypeId}
+                    isToday={viewDate === 'today'}
                   />
                 );
               })}

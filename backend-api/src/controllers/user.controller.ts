@@ -17,7 +17,7 @@ const updateRoleSchema = z.object({
 
 const updateUserSchema = z.object({
   name: z.string().min(2).optional(),
-  email: z.string().email().optional(),
+  email: z.string().email().endsWith('@thapar.edu', 'College email (@thapar.edu) is required').optional(),
   rollNo: z.string().optional().nullable(),
   phone: z.string().optional().nullable(),
   roomNo: z.string().optional().nullable(),
@@ -37,7 +37,7 @@ const updateMeSchema = z.object({
 
 const createUserSchema = z.object({
   name: z.string().min(2),
-  email: z.string().email(),
+  email: z.string().email().endsWith('@thapar.edu', 'College email (@thapar.edu) is required'),
   password: z.string().min(6),
   role: z.enum(['STUDENT', 'MESS_COMMITTEE', 'WARDEN_ADMIN', 'COUNTER_STAFF', 'SUPER_ADMIN']).default('STUDENT'),
   hostelId: z.string().optional().nullable(),

@@ -42,6 +42,7 @@ export default function LoginPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!email || !password) { setError('Both fields are required.'); return; }
+    if (!email.trim().endsWith('@thapar.edu')) { setError('Email must end with @thapar.edu.'); return; }
     setError('');
     setLoading(true);
     try {

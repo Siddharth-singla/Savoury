@@ -5,7 +5,7 @@ import prisma from '../db';
 
 const registerSchema = z.object({
   name: z.string().min(2),
-  email: z.string().email(),
+  email: z.string().email().endsWith('@thapar.edu', 'College email (@thapar.edu) is required'),
   password: z.string().min(6),
   hostelId: z.string().optional(),
   rollNo: z.string().max(20, 'Roll Number must be at most 20 characters').optional(),
@@ -43,7 +43,7 @@ export const setupSuperAdmin = async (req: Request, res: Response, next: NextFun
 };
 
 const loginSchema = z.object({
-  email: z.string().email(),
+  email: z.string().email().endsWith('@thapar.edu', 'College email (@thapar.edu) is required'),
   password: z.string().min(1),
 });
 

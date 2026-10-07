@@ -29,7 +29,7 @@ export default function LoginScreen() {
 
   const validate = (): boolean => {
     const errs: FieldErrors = {};
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) errs.email = 'Enter a valid email address';
+    if (!/^[^\s@]+@thapar\.edu$/.test(email.trim())) errs.email = 'Enter a valid @thapar.edu email address';
     if (!password) errs.password = 'Password is required';
     if (Object.keys(errs).length > 0) { setFieldErrors(errs); return false; }
     setFieldErrors({});

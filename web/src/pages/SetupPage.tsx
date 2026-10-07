@@ -44,6 +44,10 @@ export default function SetupPage() {
       setError('All fields are required.');
       return;
     }
+    if (!email.trim().endsWith('@thapar.edu')) {
+      setError('Email must end with @thapar.edu.');
+      return;
+    }
     if (password.length < 8) {
       setError('Password must be at least 8 characters.');
       return;

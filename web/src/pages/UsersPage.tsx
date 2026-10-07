@@ -634,7 +634,14 @@ function EditUserModal({ user, roles, onClose, onSubmit }: EditUserModalProps) {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!name.trim() || !email.trim()) return;
+    if (!name.trim() || !email.trim()) {
+      setErrorMsg('Name and email are required');
+      return;
+    }
+    if (!email.trim().endsWith('@thapar.edu')) {
+      setErrorMsg('Email must end with @thapar.edu');
+      return;
+    }
 
     setLoading(true);
     setErrorMsg('');

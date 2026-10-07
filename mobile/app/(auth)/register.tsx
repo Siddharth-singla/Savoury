@@ -66,7 +66,7 @@ export default function RegisterScreen() {
   const validate = (): boolean => {
     const errs: FieldErrors = {};
     if (name.trim().length < 2) errs.name = 'Name must be at least 2 characters';
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) errs.email = 'Enter a valid email address';
+    if (!/^[^\s@]+@thapar\.edu$/.test(email.trim())) errs.email = 'Enter a valid @thapar.edu email address';
     if (password.length < 6) errs.password = 'Password must be at least 6 characters';
     if (!hostelId) errs.hostelId = 'Please select a hostel';
     if (phone.trim() && !/^\d{10}$/.test(phone.trim())) errs.phone = 'Phone must be exactly 10 digits';

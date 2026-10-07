@@ -687,7 +687,6 @@ export default function UsersPage() {
       {showCreate && (
         <CreateUserModal
           isSuperAdmin={isSuperAdmin}
-          canAddStaff={canAddStaff}
           hostels={hostels}
           onClose={() => setShowCreate(false)}
           onSubmit={async (payload) => {
@@ -924,7 +923,6 @@ function EditUserModal({ user, roles, onClose, onSubmit }: EditUserModalProps) {
 /* ── Create User Modal Component ── */
 interface CreateUserModalProps {
   isSuperAdmin: boolean;
-  canAddStaff: boolean;
   hostels: Hostel[];
   onClose: () => void;
   onSubmit: (payload: {
@@ -949,7 +947,7 @@ const SUPERADMIN_CREATABLE_ROLES = [
   'STUDENT',
 ];
 
-function CreateUserModal({ isSuperAdmin, canAddStaff, hostels, onClose, onSubmit }: CreateUserModalProps) {
+function CreateUserModal({ isSuperAdmin, hostels, onClose, onSubmit }: CreateUserModalProps) {
   // Super Admin picks any creatable role; Warden/Co-Warden can only add Mess Staff.
   const creatableRoles = isSuperAdmin ? SUPERADMIN_CREATABLE_ROLES : ['COUNTER_STAFF'];
 

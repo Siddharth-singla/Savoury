@@ -1,0 +1,74 @@
+site_name: "Savoury — Hostel Mess Management System (UCS503)"
+site_url: https://siddharth-singla.github.io/Savoury
+
+plugins:
+- search
+- literate-nav:
+    nav_file: summary.md
+- section-index
+- git-revision-date-localized
+- git-authors
+
+theme:
+  name: material
+  custom_dir: docs/assets/theme-overrides
+  features:
+    - navigation.footer
+    - header.autohide
+    - content.tabs.link
+    - navigation.tracking
+    - navigation.top
+    - toc.integrate
+    - content.tooltips
+  icon:
+    repo: fontawesome/brands/github
+    annotation: material/plus-circle-outline
+  palette:
+    primary: amber
+    accent: orange
+
+repo_url: https://github.com/Siddharth-singla/Savoury
+repo_name: Savoury
+copyright: "Copyright &copy; 2026 Savoury Team (UCS503, TIET Patiala)"
+extra:
+  social:
+  - icon: fontawesome/brands/github
+    link: https://github.com/Siddharth-singla/Savoury
+    name: Git Repo for Savoury
+
+extra_css:
+  - assets/stylesheets/extra.css
+  - https://unpkg.com/katex@0/dist/katex.min.css
+
+extra_javascript:
+- https://unpkg.com/katex@0/dist/katex.min.js
+- https://unpkg.com/katex@0/dist/contrib/auto-render.min.js
+- javascript/arithmatex.js
+
+markdown_extensions:
+  - abbr
+  - md_in_html
+  - attr_list
+  - toc:
+      permalink: true
+  - footnotes
+  - pymdownx.arithmatex:
+      generic: true
+  - pymdownx.highlight:
+      anchor_linenums: true
+      line_spans: __span
+      pygments_lang_class: true
+  - pymdownx.inlinehilite
+  - pymdownx.snippets
+  - pymdownx.superfences
+  - pymdownx.tabbed:
+      alternate_style: true
+  - pymdownx.emoji:
+      emoji_index: !!python/name:material.extensions.emoji.twemoji
+      emoji_generator: !!python/name:material.extensions.emoji.to_svg
+  - pymdownx.critic
+  - pymdownx.caret
+  - pymdownx.keys
+  - pymdownx.mark
+  - pymdownx.tilde
+  - sane_lists

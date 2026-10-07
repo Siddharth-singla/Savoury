@@ -1,0 +1,25 @@
+[build-system]
+requires = ["hatchling", "hatch-vcs"]
+build-backend = "hatchling.build"
+
+[project]
+name = "savoury"
+version = "0.0.1"
+authors = [
+  { name = "Siddharth Singla" },
+  { name = "Vineet Tripathi" },
+  { name = "Shivansh Sahu" },
+]
+description = "UCS503 : Software Engineering : Savoury — Hostel Mess Management System"
+readme = "README.md"
+requires-python = ">=3.8"
+classifiers = [
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+]
+
+[project.urls]
+Homepage = "https://github.com/Siddharth-singla/Savoury"
+Issues = "https://github.com/Siddharth-singla/Savoury/issues"

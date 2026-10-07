@@ -1,9 +1,11 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { listUsers, updateRole, updateUser, deleteUser } from '../api/users';
+import { listUsers, updateRole, updateUser, deleteUser, createUser } from '../api/users';
 import type { UserRow } from '../api/users';
+import { listHostels } from '../api/hostels';
+import type { Hostel } from '../api/hostels';
 import { useAuth } from '../context/AuthContext';
-import { Search, SlidersHorizontal, Pencil, Trash2, X, Users, GraduationCap, UtensilsCrossed, ShieldAlert } from 'lucide-react';
+import { Search, SlidersHorizontal, Pencil, Trash2, X, Users, GraduationCap, UtensilsCrossed, ShieldAlert, UserPlus } from 'lucide-react';
 
 /* ── Design tokens — warm light theme ── */
 const C = {
@@ -25,15 +27,21 @@ const C = {
   dangerDim:   'rgba(139,26,26,0.1)',
 };
 
-const ALL_ROLES = ['STUDENT', 'MESS_COMMITTEE', 'COUNTER_STAFF', 'WARDEN_ADMIN', 'SUPER_ADMIN'];
-const WARDEN_ASSIGNABLE_ROLES = ['STUDENT', 'MESS_COMMITTEE', 'COUNTER_STAFF', 'WARDEN_ADMIN'];
+const HOSTEL_ADMIN_ROLES = ['WARDEN_ADMIN', 'CO_WARDEN', 'CARETAKER'];
+const ALL_ROLES = ['STUDENT', 'MESS_COMMITTEE', 'COUNTER_STAFF', 'CARETAKER', 'CO_WARDEN', 'WARDEN_ADMIN', 'SUPER_ADMIN'];
+// Roles a hostel admin may see in filters / inline role control.
+const WARDEN_FILTER_ROLES = ['STUDENT', 'MESS_COMMITTEE', 'COUNTER_STAFF'];
+
+const isHostelAdminRole = (role?: string | null) => !!role && HOSTEL_ADMIN_ROLES.includes(role);
 
 function getRoleLabel(role: string): string {
   switch (role) {
     case 'STUDENT': return 'Student';
     case 'MESS_COMMITTEE': return 'Mess Sec.';
-    case 'COUNTER_STAFF': return 'Staff';
-    case 'WARDEN_ADMIN': return 'Warden Admin';
+    case 'COUNTER_STAFF': return 'Mess Staff';
+    case 'CARETAKER': return 'Caretaker';
+    case 'CO_WARDEN': return 'Co-Warden';
+    case 'WARDEN_ADMIN': return 'Warden';
     case 'SUPER_ADMIN': return 'Super Admin';
     default: return role;
   }
@@ -54,6 +62,8 @@ function getRoleStyle(role: string) {
         border: '1px solid rgba(0,0,0,0.1)',
         color: '#5c4a38',
       };
+    case 'CARETAKER':
+    case 'CO_WARDEN':
     case 'WARDEN_ADMIN':
     case 'SUPER_ADMIN':
       return {
@@ -93,9 +103,11 @@ function UserAvatar({ name, size = 38 }: { name: string; size?: number }) {
 
 export default function UsersPage() {
   const [roleFilter, setRoleFilter] = useState('');
+  const [hostelFilter, setHostelFilter] = useState('');
   const [search, setSearch] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
   const [editingUser, setEditingUser] = useState<UserRow | null>(null);
+  const [showCreate, setShowCreate] = useState(false);
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -106,15 +118,32 @@ export default function UsersPage() {
 
   const qc = useQueryClient();
   const { user: currentUser } = useAuth();
-  const isWardenAdmin = currentUser?.role === 'WARDEN_ADMIN';
-  const ROLES = isWardenAdmin ? WARDEN_ASSIGNABLE_ROLES : ALL_ROLES;
+  const isSuperAdmin = currentUser?.role === 'SUPER_ADMIN';
+  const isWarden = currentUser?.role === 'WARDEN_ADMIN';
+  const isCoWarden = currentUser?.role === 'CO_WARDEN';
+  const isHostelAdmin = isHostelAdminRole(currentUser?.role);
+  // Can this user add Mess Staff? (Warden & Co-Warden only — not Caretaker)
+  const canAddStaff = isWarden || isCoWarden;
+
+  // Role options for the inline role control + role filter dropdown.
+  const ROLES = isHostelAdmin ? WARDEN_FILTER_ROLES : ALL_ROLES;
+
+  // Hostels — only needed for the Super Admin (hostel filter + create picker).
+  const { data: hostelData } = useQuery({
+    queryKey: ['hostels'],
+    queryFn: listHostels,
+    enabled: isSuperAdmin,
+    staleTime: 60_000,
+  });
+  const hostels: Hostel[] = hostelData?.hostels ?? [];
 
   const pageSize = 500;
 
   const { data, isLoading, isError, error, refetch } = useQuery({
-    queryKey: ['users', roleFilter, debouncedSearch],
+    queryKey: ['users', roleFilter, hostelFilter, debouncedSearch],
     queryFn: () => listUsers({
       role: roleFilter || undefined,
+      hostelId: hostelFilter || undefined,
       limit: pageSize,
       search: debouncedSearch || undefined,
     }),
@@ -386,28 +415,71 @@ export default function UsersPage() {
             )}
           </div>
 
-          {/* Right actions: Filter by role */}
-          <div style={{
-            display: 'flex', alignItems: 'center', gap: 8,
-            background: C.surface2, borderRadius: 10,
-            padding: '0 14px', border: `1px solid ${C.border}`,
-            height: 42,
-          }}>
-            <SlidersHorizontal size={14} color={C.textMuted} strokeWidth={2} />
-            <select
-              value={roleFilter}
-              onChange={e => setRoleFilter(e.target.value)}
-              style={{
-                background: 'transparent', border: 'none', outline: 'none',
-                color: C.text, fontSize: 13, fontFamily: 'inherit', fontWeight: 600,
-                cursor: 'pointer', appearance: 'none', paddingRight: 16,
-              }}
-            >
-              <option value="" style={{ background: C.surface, color: C.text }}>All Roles</option>
-              {ROLES.map(r => (
-                <option key={r} value={r} style={{ background: C.surface, color: C.text }}>{getRoleLabel(r)}</option>
-              ))}
-            </select>
+          {/* Right actions: Filter by hostel (Super Admin), filter by role, Add User */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+            {isSuperAdmin && (
+              <div style={{
+                display: 'flex', alignItems: 'center', gap: 8,
+                background: C.surface2, borderRadius: 10,
+                padding: '0 14px', border: `1px solid ${C.border}`,
+                height: 42,
+              }}>
+                <SlidersHorizontal size={14} color={C.textMuted} strokeWidth={2} />
+                <select
+                  value={hostelFilter}
+                  onChange={e => setHostelFilter(e.target.value)}
+                  style={{
+                    background: 'transparent', border: 'none', outline: 'none',
+                    color: C.text, fontSize: 13, fontFamily: 'inherit', fontWeight: 600,
+                    cursor: 'pointer', appearance: 'none', paddingRight: 16,
+                  }}
+                >
+                  <option value="" style={{ background: C.surface, color: C.text }}>All Hostels</option>
+                  {hostels.map(h => (
+                    <option key={h.id} value={h.id} style={{ background: C.surface, color: C.text }}>{h.name}</option>
+                  ))}
+                </select>
+              </div>
+            )}
+
+            <div style={{
+              display: 'flex', alignItems: 'center', gap: 8,
+              background: C.surface2, borderRadius: 10,
+              padding: '0 14px', border: `1px solid ${C.border}`,
+              height: 42,
+            }}>
+              <SlidersHorizontal size={14} color={C.textMuted} strokeWidth={2} />
+              <select
+                value={roleFilter}
+                onChange={e => setRoleFilter(e.target.value)}
+                style={{
+                  background: 'transparent', border: 'none', outline: 'none',
+                  color: C.text, fontSize: 13, fontFamily: 'inherit', fontWeight: 600,
+                  cursor: 'pointer', appearance: 'none', paddingRight: 16,
+                }}
+              >
+                <option value="" style={{ background: C.surface, color: C.text }}>All Roles</option>
+                {ROLES.map(r => (
+                  <option key={r} value={r} style={{ background: C.surface, color: C.text }}>{getRoleLabel(r)}</option>
+                ))}
+              </select>
+            </div>
+
+            {/* Add User — Super Admin always; Warden/Co-Warden to add Mess Staff */}
+            {(isSuperAdmin || canAddStaff) && (
+              <button
+                onClick={() => setShowCreate(true)}
+                style={{
+                  display: 'inline-flex', alignItems: 'center', gap: 7,
+                  height: 42, padding: '0 18px', borderRadius: 10,
+                  background: C.primary, border: 'none', color: '#fff',
+                  fontSize: 13, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit',
+                }}
+              >
+                <UserPlus size={15} strokeWidth={2.2} />
+                {isSuperAdmin ? 'Add User' : 'Add Mess Staff'}
+              </button>
+            )}
           </div>
         </div>
 
@@ -607,6 +679,25 @@ export default function UsersPage() {
             await updateUser(editingUser.id, formData);
             qc.invalidateQueries({ queryKey: ['users'] });
             setEditingUser(null);
+          }}
+        />
+      )}
+
+      {/* ── Create User Modal ── */}
+      {showCreate && (
+        <CreateUserModal
+          isSuperAdmin={isSuperAdmin}
+          canAddStaff={canAddStaff}
+          hostels={hostels}
+          onClose={() => setShowCreate(false)}
+          onSubmit={async (payload) => {
+            await createUser(payload);
+            qc.invalidateQueries({ queryKey: ['users'] });
+            qc.invalidateQueries({ queryKey: ['users-stat-total'] });
+            qc.invalidateQueries({ queryKey: ['users-stat-diners'] });
+            qc.invalidateQueries({ queryKey: ['users-stat-staff'] });
+            qc.invalidateQueries({ queryKey: ['users-stat-admin'] });
+            setShowCreate(false);
           }}
         />
       )}
@@ -822,6 +913,233 @@ function EditUserModal({ user, roles, onClose, onSubmit }: EditUserModalProps) {
               }}
             >
               {loading ? 'Saving…' : 'Save Changes'}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}
+
+/* ── Create User Modal Component ── */
+interface CreateUserModalProps {
+  isSuperAdmin: boolean;
+  canAddStaff: boolean;
+  hostels: Hostel[];
+  onClose: () => void;
+  onSubmit: (payload: {
+    name: string;
+    email: string;
+    password: string;
+    role: string;
+    hostelId?: string | null;
+    rollNo?: string | null;
+    phone?: string | null;
+    roomNo?: string | null;
+  }) => Promise<void>;
+}
+
+// Roles a Super Admin may create from this screen, in display order.
+const SUPERADMIN_CREATABLE_ROLES = [
+  'WARDEN_ADMIN',
+  'CO_WARDEN',
+  'CARETAKER',
+  'COUNTER_STAFF',
+  'MESS_COMMITTEE',
+  'STUDENT',
+];
+
+function CreateUserModal({ isSuperAdmin, canAddStaff, hostels, onClose, onSubmit }: CreateUserModalProps) {
+  // Super Admin picks any creatable role; Warden/Co-Warden can only add Mess Staff.
+  const creatableRoles = isSuperAdmin ? SUPERADMIN_CREATABLE_ROLES : ['COUNTER_STAFF'];
+
+  const [name, setName] = useState('');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [role, setRole] = useState(creatableRoles[0]);
+  const [hostelId, setHostelId] = useState('');
+  const [rollNo, setRollNo] = useState('');
+  const [roomNo, setRoomNo] = useState('');
+  const [phone, setPhone] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [errorMsg, setErrorMsg] = useState('');
+
+  // Mess Staff / caretakers / wardens are not app students, so roll/room are
+  // only meaningful for STUDENT / MESS_COMMITTEE accounts.
+  const isStudentType = role === 'STUDENT' || role === 'MESS_COMMITTEE';
+  // Super Admin must choose a hostel for every role except (there is none here
+  // that is hostel-less — all creatable roles are hostel-bound).
+  const needsHostel = isSuperAdmin;
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!name.trim() || !email.trim() || !password) {
+      setErrorMsg('Name, email and password are required');
+      return;
+    }
+    if (!email.trim().endsWith('@thapar.edu')) {
+      setErrorMsg('Email must end with @thapar.edu');
+      return;
+    }
+    if (password.length < 6) {
+      setErrorMsg('Password must be at least 6 characters');
+      return;
+    }
+    if (needsHostel && !hostelId) {
+      setErrorMsg('Please select a hostel for this user');
+      return;
+    }
+
+    setLoading(true);
+    setErrorMsg('');
+    try {
+      await onSubmit({
+        name: name.trim(),
+        email: email.trim(),
+        password,
+        role,
+        // Warden/Co-Warden: backend forces their own hostel, so we omit it.
+        hostelId: isSuperAdmin ? (hostelId || null) : undefined,
+        rollNo: isStudentType ? (rollNo.trim() || null) : null,
+        roomNo: isStudentType ? (roomNo.trim() || null) : null,
+        phone: phone.trim() || null,
+      });
+    } catch (err: any) {
+      setErrorMsg(err.response?.data?.error || err.message || 'Failed to create user');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const inputStyle = {
+    background: C.surface2, border: `1px solid ${C.border}`, borderRadius: 10,
+    padding: '10px 14px', color: C.text, fontSize: 14, width: '100%', outline: 'none',
+  } as const;
+  const labelStyle = {
+    fontSize: 11, fontWeight: 700, color: C.textMuted, textTransform: 'uppercase',
+    display: 'block', marginBottom: 6,
+  } as const;
+
+  return (
+    <div style={{
+      position: 'fixed', inset: 0, zIndex: 100,
+      background: 'rgba(0,0,0,0.5)', backdropFilter: 'blur(4px)',
+      display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20,
+    }}>
+      <div style={{
+        background: C.surface, borderRadius: 20, border: `1px solid ${C.border}`,
+        width: '100%', maxWidth: 500, padding: '30px 32px',
+        boxShadow: '0 25px 60px rgba(0,0,0,0.2)', maxHeight: '90vh', overflowY: 'auto',
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
+          <h2 style={{ fontSize: 22, fontWeight: 800, color: C.text, margin: 0, fontFamily: "'Georgia', serif" }}>
+            {isSuperAdmin ? 'Add User' : 'Add Mess Staff'}
+          </h2>
+          <button
+            onClick={onClose}
+            style={{ background: 'none', border: 'none', color: C.textMuted, fontSize: 18, cursor: 'pointer', padding: 4 }}
+          >
+            ✕
+          </button>
+        </div>
+        <p style={{ fontSize: 12.5, color: C.textMuted, margin: '0 0 18px', lineHeight: 1.5 }}>
+          {isSuperAdmin
+            ? 'Create a warden, co-warden, caretaker, mess staff, or student. Wardens and co-wardens are limited to one per hostel.'
+            : 'Mess staff are created with login credentials and do not register through the app. They can scan and let students in for meals.'}
+        </p>
+
+        {errorMsg && (
+          <div style={{
+            background: C.dangerDim, border: '1px solid rgba(139,26,26,0.2)',
+            borderRadius: 10, padding: '10px 14px', color: C.danger, fontSize: 13, marginBottom: 16,
+          }}>
+            {errorMsg}
+          </div>
+        )}
+
+        <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+          <div>
+            <label style={labelStyle}>Full Name *</label>
+            <input type="text" required value={name} onChange={e => setName(e.target.value)} placeholder="e.g. Sarah Jenkins" style={inputStyle} />
+          </div>
+
+          <div>
+            <label style={labelStyle}>Email Address *</label>
+            <input type="email" required value={email} onChange={e => setEmail(e.target.value)} placeholder="e.g. s.jenkins@thapar.edu" style={inputStyle} />
+          </div>
+
+          <div>
+            <label style={labelStyle}>Password *</label>
+            <input type="password" required value={password} onChange={e => setPassword(e.target.value)} placeholder="At least 6 characters" style={inputStyle} />
+          </div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: needsHostel ? '1fr 1fr' : '1fr', gap: 12 }}>
+            <div>
+              <label style={labelStyle}>Role {isSuperAdmin ? '' : '(Mess Staff)'}</label>
+              {isSuperAdmin ? (
+                <select value={role} onChange={e => setRole(e.target.value)} style={inputStyle}>
+                  {creatableRoles.map(r => (
+                    <option key={r} value={r} style={{ background: C.surface, color: C.text }}>{getRoleLabel(r)}</option>
+                  ))}
+                </select>
+              ) : (
+                <input type="text" value="Mess Staff" disabled style={{ ...inputStyle, opacity: 0.7, cursor: 'not-allowed' }} />
+              )}
+            </div>
+
+            {needsHostel && (
+              <div>
+                <label style={labelStyle}>Hostel *</label>
+                <select value={hostelId} onChange={e => setHostelId(e.target.value)} style={inputStyle}>
+                  <option value="" style={{ background: C.surface, color: C.text }}>Select hostel…</option>
+                  {hostels.map(h => (
+                    <option key={h.id} value={h.id} style={{ background: C.surface, color: C.text }}>{h.name}</option>
+                  ))}
+                </select>
+              </div>
+            )}
+          </div>
+
+          {isStudentType && (
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+              <div>
+                <label style={labelStyle}>Roll Number</label>
+                <input type="text" value={rollNo} onChange={e => setRollNo(e.target.value)} placeholder="e.g. 102103045" style={inputStyle} />
+              </div>
+              <div>
+                <label style={labelStyle}>Room Number</label>
+                <input type="text" value={roomNo} onChange={e => setRoomNo(e.target.value)} placeholder="e.g. 214" style={inputStyle} />
+              </div>
+            </div>
+          )}
+
+          <div>
+            <label style={labelStyle}>Phone Number</label>
+            <input type="text" value={phone} onChange={e => setPhone(e.target.value)} placeholder="e.g. 9876543210" style={inputStyle} />
+          </div>
+
+          <div style={{ display: 'flex', gap: 12, justifyContent: 'flex-end', marginTop: 12 }}>
+            <button
+              type="button"
+              onClick={onClose}
+              style={{
+                padding: '10px 18px', borderRadius: 10,
+                background: 'transparent', border: `1px solid ${C.border}`,
+                color: C.textSub, fontSize: 13, fontWeight: 600, cursor: 'pointer',
+              }}
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              disabled={loading}
+              style={{
+                padding: '10px 22px', borderRadius: 10,
+                background: C.primary, border: 'none', color: '#fff', fontSize: 13, fontWeight: 700,
+                cursor: loading ? 'not-allowed' : 'pointer', opacity: loading ? 0.7 : 1,
+              }}
+            >
+              {loading ? 'Creating…' : 'Create User'}
             </button>
           </div>
         </form>

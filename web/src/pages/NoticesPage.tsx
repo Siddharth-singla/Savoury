@@ -465,8 +465,10 @@ export default function NoticesPage() {
   });
 
   const notices = data?.notices ?? [];
-  const canCreate = user?.role === 'MESS_COMMITTEE' || user?.role === 'WARDEN_ADMIN';
-  const canDeleteAny = user?.role === 'WARDEN_ADMIN' || user?.role === 'SUPER_ADMIN';
+  const HOSTEL_ADMINS = ['WARDEN_ADMIN', 'CO_WARDEN', 'CARETAKER'];
+  const isHostelAdmin = !!user && HOSTEL_ADMINS.includes(user.role);
+  const canCreate = user?.role === 'MESS_COMMITTEE' || isHostelAdmin;
+  const canDeleteAny = isHostelAdmin || user?.role === 'SUPER_ADMIN';
 
   return (
     <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>

@@ -19,8 +19,10 @@ datasource db {
 enum Role {
   STUDENT
   MESS_COMMITTEE
-  WARDEN_ADMIN
-  COUNTER_STAFF
+  WARDEN_ADMIN // "Warden" — 1 per hostel
+  CO_WARDEN // identical powers to Warden; 1 per hostel
+  CARETAKER // identical powers to Warden EXCEPT cannot add Mess Staff; unlimited per hostel
+  COUNTER_STAFF // "Mess Staff" — check-in only; added by Warden/Co-Warden
   SUPER_ADMIN
 }
 

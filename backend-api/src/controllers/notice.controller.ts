@@ -2,11 +2,12 @@ import { Request, Response, NextFunction } from 'express';
 import { z } from 'zod';
 import { Role } from '@prisma/client';
 import prisma from '../db';
+import { ALL_ROLES, isHostelAdmin } from '../constants/roles';
 
 const createNoticeSchema = z.object({
   title: z.string().min(1).max(200),
   body: z.string().min(1).max(5000),
-  targetRole: z.enum(['STUDENT', 'MESS_COMMITTEE', 'WARDEN_ADMIN', 'COUNTER_STAFF', 'SUPER_ADMIN']).nullable().optional(),
+  targetRole: z.enum(ALL_ROLES as unknown as [string, ...string[]]).nullable().optional(),
 });
 
 /**
@@ -23,9 +24,10 @@ export const listNotices = async (req: Request, res: Response, next: NextFunctio
     const userRole = req.user!.role as Role;
     const userHostelId = req.user!.hostelId;
 
-    // Build visibility filter
+    // Build visibility filter — hostel admins (Warden/Co-Warden/Caretaker) and
+    // super admins see every notice regardless of targetRole.
     const roleFilter =
-      userRole === 'WARDEN_ADMIN' || userRole === 'SUPER_ADMIN'
+      isHostelAdmin(userRole) || userRole === 'SUPER_ADMIN'
         ? {} // admins see everything
         : {
             OR: [
@@ -85,7 +87,7 @@ export const latestTimestamp = async (req: Request, res: Response, next: NextFun
     const userHostelId = req.user!.hostelId;
     
     const roleFilter =
-      userRole === 'WARDEN_ADMIN' || userRole === 'SUPER_ADMIN'
+      isHostelAdmin(userRole) || userRole === 'SUPER_ADMIN'
         ? {}
         : { OR: [{ targetRole: null }, { targetRole: userRole }] };
 
@@ -123,7 +125,7 @@ export const createNotice = async (req: Request, res: Response, next: NextFuncti
       data: {
         title,
         body,
-        targetRole: targetRole ?? null,
+        targetRole: (targetRole ?? null) as Role | null,
         hostelId: req.user!.hostelId,
         postedById: userId,
       },
@@ -152,7 +154,7 @@ export const deleteNotice = async (req: Request, res: Response, next: NextFuncti
       return res.status(404).json({ error: 'Notice not found' });
     }
 
-    if (role !== 'WARDEN_ADMIN' && role !== 'SUPER_ADMIN' && notice.postedById !== userId) {
+    if (!isHostelAdmin(role) && role !== 'SUPER_ADMIN' && notice.postedById !== userId) {
       return res.status(403).json({ error: 'You can only delete your own notices' });
     }
 

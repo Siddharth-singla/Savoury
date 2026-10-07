@@ -7,7 +7,7 @@ export interface User {
   id: string;
   name: string;
   email: string;
-  role: 'STUDENT' | 'MESS_COMMITTEE' | 'WARDEN_ADMIN' | 'COUNTER_STAFF' | 'SUPER_ADMIN';
+  role: 'STUDENT' | 'MESS_COMMITTEE' | 'WARDEN_ADMIN' | 'CO_WARDEN' | 'CARETAKER' | 'COUNTER_STAFF' | 'SUPER_ADMIN';
   hostelId: string | null;
   hostelName?: string;
   rollNo?: string | null;

@@ -3,8 +3,6 @@
 \usepackage{graphicx}
 \usepackage[utf8]{inputenc}
 \usepackage[english]{babel}
-\usepackage{tikz}
-\usetikzlibrary{arrows.meta}
 \usepackage{array}
 \usepackage{longtable}
 \usepackage[bookmarks=true]{hyperref}
@@ -23,17 +21,6 @@
 }%
 \def\myversion{1.0 }
 \date{}
-
-% ---- TikZ node styles ----
-\tikzset{
-  box/.style   = {rectangle, rounded corners, draw=black, fill=blue!8,
-                  minimum width=3cm, minimum height=1cm, align=center, font=\small},
-  actor/.style = {rectangle, rounded corners, draw=black, fill=orange!18,
-                  minimum width=3cm, minimum height=1cm, align=center, font=\small},
-  store/.style = {rectangle, draw=black, fill=green!12,
-                  minimum width=3cm, minimum height=1cm, align=center, font=\small},
-  flow/.style  = {-{Latex[length=2.5mm]}, thick},
-}
 
 \begin{document}
 
@@ -112,32 +99,19 @@ or QR). Each serve writes an attendance record and debits the student's
 wallet by the meal's per-meal rate in a single transaction; duplicate
 serves are rejected.
 
-Figure~\ref{fig:workflow} shows the overall work-flow. The entities are
-mutually dependent: students take meals that are planned by the mess
-committee, locked by configurable cutoffs, served and billed by counter
-staff, and overseen per hostel by wardens, with the whole system
-administered by the super admin.
+The entities are mutually dependent: students take meals that are planned
+by the mess committee, locked by configurable cutoffs, served and billed
+by counter staff, and overseen per hostel by wardens, with the whole
+system administered by the super admin.
 
-\begin{figure}[h!]
-    \centering
-    \begin{tikzpicture}
-      \node[actor] (sa)      at (0, 6)    {Super Admin};
-      \node[box]   (hostel)  at (0, 4.3)  {Hostel \& Mess\\(Warden / Co-Warden / Caretaker)};
-      \node[box]   (menu)    at (0, 2.6)  {Menu \& Booking\\(cutoff)};
-      \node[actor] (student) at (-4, 2.6) {Student};
-      \node[actor] (staff)   at (4, 2.6)  {Counter Staff};
-      \node[store] (wallet)  at (0, 0.6)  {Attendance \&\\Wallet Ledger};
-
-      \draw[flow] (sa)     -- node[right,font=\scriptsize]{creates} (hostel);
-      \draw[flow] (hostel) -- node[right,font=\scriptsize]{plans / locks} (menu);
-      \draw[flow] (student)-- node[above,font=\scriptsize]{opt-in/out} (menu);
-      \draw[flow] (menu)   -- node[above,font=\scriptsize]{headcount} (staff);
-      \draw[flow] (staff)  -- node[right,font=\scriptsize]{serves} (wallet);
-      \draw[flow] (wallet) -- node[below,font=\scriptsize]{debit} (student);
-    \end{tikzpicture}
-    \caption{Entire work-flow}
-    \label{fig:workflow}
-\end{figure}
+% ----- FIGURE 1: Entire work-flow -----
+% Upload your image (e.g. workflow.jpg) to the project, then uncomment:
+% \begin{figure}[h!]
+%     \centering
+%     \includegraphics[width=12cm]{workflow.jpg}
+%     \caption{Entire work-flow}
+%     \label{fig:workflow}
+% \end{figure}
 
 \section{Objectives}
 \begin{enumerate}
@@ -159,8 +133,7 @@ The main goal is to minimise manual effort and food wastage while
 maximising billing accuracy and transparency for the mess operation.
 
 \section{User Classes and Characteristics}
-Savoury has the following classes of users, shown in
-Figure~\ref{fig:users}:
+Savoury has the following classes of users:
 \begin{itemize}
   \item Administrators
     \begin{itemize}
@@ -180,53 +153,17 @@ privileges. Counter Staff only serve meals and never log in to the mobile
 app. Students fulfil registration (college email, hostel) and use the
 mobile app.
 
-\begin{figure}[h!]
-    \centering
-    \begin{tikzpicture}
-      \node[box]   (users)     at (0, 5)      {Users};
-      \node[actor] (admins)    at (-4.5, 3.2) {Administrators};
-      \node[actor] (committee) at (-1.5, 3.2) {Mess Committee};
-      \node[actor] (students)  at (1.5, 3.2)  {Students};
-      \node[actor] (staff)     at (4.5, 3.2)  {Counter Staff};
-
-      \node[box]   (super)  at (-7, 1.2) {Super Admin};
-      \node[box]   (warden) at (-4.5, 1.2) {Warden /\\Co-Warden};
-      \node[box]   (care)   at (-2, 1.2) {Caretaker};
-
-      \draw[flow] (users) -- (admins);
-      \draw[flow] (users) -- (committee);
-      \draw[flow] (users) -- (students);
-      \draw[flow] (users) -- (staff);
-      \draw[flow] (admins) -- (super);
-      \draw[flow] (admins) -- (warden);
-      \draw[flow] (admins) -- (care);
-    \end{tikzpicture}
-    \caption{Types of users}
-    \label{fig:users}
-\end{figure}
+% ----- FIGURE 2: Types of users -----
+% \begin{figure}[h!]
+%     \centering
+%     \includegraphics[width=12cm]{users.jpg}
+%     \caption{Types of users}
+%     \label{fig:users}
+% \end{figure}
 
 \section{Product Functions}
 Savoury stores menus, bookings, attendance, and wallet ledgers for all
-students of a hostel's mess. Figure~\ref{fig:dfd} is the data-flow
-overview.
-
-\begin{figure}[h!]
-    \centering
-    \begin{tikzpicture}
-      \node[actor] (student) at (0, 3)   {Student};
-      \node[box]   (booking) at (4, 3)   {Booking /\\Opt-out};
-      \node[store] (db)      at (8.5, 1.5) {Database\\(Prisma / PostgreSQL)};
-      \node[actor] (staff)   at (0, 0)   {Counter Staff};
-      \node[box]   (att)     at (4, 0)   {Attendance};
-
-      \draw[flow] (student) -- node[above,font=\scriptsize]{opt-in/out} (booking);
-      \draw[flow] (booking) -- node[above,font=\scriptsize]{status} (db);
-      \draw[flow] (staff)   -- node[above,font=\scriptsize]{serve} (att);
-      \draw[flow] (att)     -- node[below,font=\scriptsize]{debit} (db);
-    \end{tikzpicture}
-    \caption{Data Flow Diagram}
-    \label{fig:dfd}
-\end{figure}
+students of a hostel's mess.
 
 Before using the system, users must be authenticated. All users share
 these fields: id, name, email, phone, roomNo, avatar, passwordHash, role,
@@ -257,6 +194,14 @@ balance and owns \textbf{WalletTransaction} rows (TOPUP, MEAL\_DEDUCTION,
 CASHOUT, ADJUSTMENT); \textbf{CashoutRequest} tracks end-of-semester
 refunds.
 
+% ----- FIGURE 3: Data Flow Diagram -----
+% \begin{figure}[h!]
+%     \centering
+%     \includegraphics[width=15cm]{dfd.jpg}
+%     \caption{Data Flow Diagram}
+%     \label{fig:dfd}
+% \end{figure}
+
 \section{Operating Environment}
 The backend is a Node.js (Express + TypeScript) service with a
 PostgreSQL database, deployable on any OS and hosted on Render with a
@@ -276,18 +221,13 @@ to eat every meal unless they opt out before cutoff. Their profile shows
 personal information, wallet balance and transactions, the menu, and
 notices targeted to their hostel/role.
 
-\begin{figure}[h!]
-    \centering
-    \begin{tikzpicture}
-      \node[box] (reg)  at (0, 4) {Register\\(email + hostel)};
-      \node[box] (opt)  at (0, 2) {Plan opt-outs\\(before cutoff)};
-      \node[box] (prof) at (0, 0) {Profile \& Wallet};
-      \draw[flow] (reg) -- (opt);
-      \draw[flow] (opt) -- (prof);
-    \end{tikzpicture}
-    \caption{Student Activities}
-    \label{fig:student}
-\end{figure}
+% ----- FIGURE 4: Student Activities -----
+% \begin{figure}[h!]
+%     \centering
+%     \includegraphics[width=12cm]{student-activities.jpg}
+%     \caption{Student Activities}
+%     \label{fig:student}
+% \end{figure}
 
 Hostel-administrator activities split by role: Warden / Co-Warden and
 Caretaker. Wardens and Co-Wardens manage menus, notices, headcount,
@@ -296,36 +236,24 @@ may add Mess Staff. Caretakers do everything a Warden does \emph{except}
 add Mess Staff. The Super Admin additionally creates hostels and appoints
 the hostel administrators.
 
-\begin{figure}[h!]
-    \centering
-    \begin{tikzpicture}
-      \node[actor] (warden) at (0, 3)    {Warden / Co-Warden};
-      \node[box]   (m1) at (-5, 0.8)  {Menu / Notice};
-      \node[box]   (m2) at (-1.7, 0.8) {Wallet / Cashout};
-      \node[box]   (m3) at (1.7, 0.8)  {Add Mess Staff};
-      \node[box]   (m4) at (5, 0.8)   {Check-in /\\Override};
-      \draw[flow] (warden) -- (m1);
-      \draw[flow] (warden) -- (m2);
-      \draw[flow] (warden) -- (m3);
-      \draw[flow] (warden) -- (m4);
-    \end{tikzpicture}
-    \caption{Hostel-Administrator Activities}
-    \label{fig:warden}
-\end{figure}
+% ----- FIGURE 5: Hostel-Administrator Activities -----
+% \begin{figure}[h!]
+%     \centering
+%     \includegraphics[width=12cm]{admin-activities.jpg}
+%     \caption{Hostel-Administrator Activities}
+%     \label{fig:warden}
+% \end{figure}
 
 Counter (Mess) Staff have a single activity: serve / check-in students at
 the counter.
 
-\begin{figure}[h!]
-    \centering
-    \begin{tikzpicture}
-      \node[actor] (staff) at (0, 2) {Counter Staff};
-      \node[box]   (serve) at (0, 0) {Serve / Check-in};
-      \draw[flow] (staff) -- (serve);
-    \end{tikzpicture}
-    \caption{Counter Staff Activities}
-    \label{fig:staff}
-\end{figure}
+% ----- FIGURE 6: Counter Staff Activities -----
+% \begin{figure}[h!]
+%     \centering
+%     \includegraphics[width=8cm]{staff-activities.jpg}
+%     \caption{Counter Staff Activities}
+%     \label{fig:staff}
+% \end{figure}
 
 % ============================================================
 \chapter{System Features}

@@ -104,14 +104,12 @@ by the mess committee, locked by configurable cutoffs, served and billed
 by counter staff, and overseen per hostel by wardens, with the whole
 system administered by the super admin.
 
-% ----- FIGURE 1: Entire work-flow -----
-% Upload your image (e.g. workflow.jpg) to the project, then uncomment:
-% \begin{figure}[h!]
-%     \centering
-%     \includegraphics[width=12cm]{workflow.jpg}
-%     \caption{Entire work-flow}
-%     \label{fig:workflow}
-% \end{figure}
+\begin{figure}[h!]
+    \centering
+    \includegraphics[width=11cm]{workflow.png}
+    \caption{Entire work-flow}
+    \label{fig:workflow}
+\end{figure}
 
 \section{Objectives}
 \begin{enumerate}
@@ -153,13 +151,12 @@ privileges. Counter Staff only serve meals and never log in to the mobile
 app. Students fulfil registration (college email, hostel) and use the
 mobile app.
 
-% ----- FIGURE 2: Types of users -----
-% \begin{figure}[h!]
-%     \centering
-%     \includegraphics[width=12cm]{users.jpg}
-%     \caption{Types of users}
-%     \label{fig:users}
-% \end{figure}
+\begin{figure}[h!]
+    \centering
+    \includegraphics[width=13cm]{users.png}
+    \caption{Types of users}
+    \label{fig:users}
+\end{figure}
 
 \section{Product Functions}
 Savoury stores menus, bookings, attendance, and wallet ledgers for all
@@ -194,13 +191,12 @@ balance and owns \textbf{WalletTransaction} rows (TOPUP, MEAL\_DEDUCTION,
 CASHOUT, ADJUSTMENT); \textbf{CashoutRequest} tracks end-of-semester
 refunds.
 
-% ----- FIGURE 3: Data Flow Diagram -----
-% \begin{figure}[h!]
-%     \centering
-%     \includegraphics[width=15cm]{dfd.jpg}
-%     \caption{Data Flow Diagram}
-%     \label{fig:dfd}
-% \end{figure}
+\begin{figure}[h!]
+    \centering
+    \includegraphics[width=\textwidth]{dfd.png}
+    \caption{Data Flow Diagram}
+    \label{fig:dfd}
+\end{figure}
 
 \section{Operating Environment}
 The backend is a Node.js (Express + TypeScript) service with a
@@ -221,13 +217,12 @@ to eat every meal unless they opt out before cutoff. Their profile shows
 personal information, wallet balance and transactions, the menu, and
 notices targeted to their hostel/role.
 
-% ----- FIGURE 4: Student Activities -----
-% \begin{figure}[h!]
-%     \centering
-%     \includegraphics[width=12cm]{student-activities.jpg}
-%     \caption{Student Activities}
-%     \label{fig:student}
-% \end{figure}
+\begin{figure}[h!]
+    \centering
+    \includegraphics[width=13cm]{student-activities.png}
+    \caption{Student Activities}
+    \label{fig:student}
+\end{figure}
 
 Hostel-administrator activities split by role: Warden / Co-Warden and
 Caretaker. Wardens and Co-Wardens manage menus, notices, headcount,
@@ -236,24 +231,22 @@ may add Mess Staff. Caretakers do everything a Warden does \emph{except}
 add Mess Staff. The Super Admin additionally creates hostels and appoints
 the hostel administrators.
 
-% ----- FIGURE 5: Hostel-Administrator Activities -----
-% \begin{figure}[h!]
-%     \centering
-%     \includegraphics[width=12cm]{admin-activities.jpg}
-%     \caption{Hostel-Administrator Activities}
-%     \label{fig:warden}
-% \end{figure}
+\begin{figure}[h!]
+    \centering
+    \includegraphics[width=13cm]{admin-activities.png}
+    \caption{Hostel-Administrator Activities}
+    \label{fig:warden}
+\end{figure}
 
 Counter (Mess) Staff have a single activity: serve / check-in students at
 the counter.
 
-% ----- FIGURE 6: Counter Staff Activities -----
-% \begin{figure}[h!]
-%     \centering
-%     \includegraphics[width=8cm]{staff-activities.jpg}
-%     \caption{Counter Staff Activities}
-%     \label{fig:staff}
-% \end{figure}
+\begin{figure}[h!]
+    \centering
+    \includegraphics[width=9cm]{staff-activities.png}
+    \caption{Counter Staff Activities}
+    \label{fig:staff}
+\end{figure}
 
 % ============================================================
 \chapter{System Features}

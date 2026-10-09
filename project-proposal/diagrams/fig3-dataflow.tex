@@ -1,0 +1,53 @@
+% Figure 3 — Data model / entities (dark-header tables, like the reference)
+\documentclass[border=12pt]{standalone}
+\usepackage{tikz}
+\usepackage{array}
+\usepackage[table]{xcolor}
+\usetikzlibrary{arrows.meta, positioning, fit}
+\begin{document}
+\footnotesize
+% A table node: #1 = node name, #2 = position, #3 = title, #4 = rows (\\ separated)
+\newcommand{\dbtable}[4]{%
+  \node[inner sep=0pt, outer sep=0pt] (#1) at (#2) {%
+    \begin{tabular}{|c|}
+      \hline
+      \rowcolor{black}\color{white}\bfseries #3 \\ \hline
+      #4 \\ \hline
+    \end{tabular}%
+  };%
+}
+\begin{tikzpicture}[
+    rel/.style={-{Latex[length=2mm]}, thick},
+  ]
+
+  \dbtable{user}{0,0}{User}{%
+    id \\ name \\ email \\ phone \\ roomNo \\ role \\ hostelId \\ passwordHash}
+
+  \dbtable{student}{4.3,0.6}{Student (fields)}{%
+    rollNo \\ hostelId (FK) \\ bookings[] \\ optOuts[] \\ walletAccounts[]}
+
+  \dbtable{meal}{9,1.2}{MealType}{%
+    id \\ slot \\ displayName \\ servingStart \\ servingEnd \\ defaultCutoffTime \\ perMealRate}
+
+  \dbtable{menu}{4.3,-3.2}{Menu}{%
+    id \\ messId (FK) \\ mealTypeId (FK) \\ date \\ items (JSON)}
+
+  \dbtable{booking}{9,-3}{Booking}{%
+    id \\ studentId (FK) \\ mealTypeId (FK) \\ date \\ status \\ lockedAt}
+
+  \dbtable{att}{13.2,-0.2}{Attendance}{%
+    id \\ bookingId (FK) \\ checkedInById \\ result \\ overrideReason \\ checkedInAt}
+
+  \dbtable{wallet}{13.2,-4}{WalletAccount}{%
+    id \\ studentId (FK) \\ balance \\ semesterLabel}
+
+  % relationships
+  \draw[rel] (user.east) -- (student.west);
+  \draw[rel] (student.north) |- (meal.west);
+  \draw[rel] (meal.south) -- (booking.north);
+  \draw[rel] (menu.east) -- (booking.west);
+  \draw[rel] (booking.east) -- (att.south);
+  \draw[rel] (student.south) |- (wallet.west);
+
+\end{tikzpicture}
+\end{document}

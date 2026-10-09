@@ -1,0 +1,44 @@
+% Figure 4 — Student Activities (process / chevron style, like the reference)
+\documentclass[border=12pt]{standalone}
+\usepackage{tikz}
+\usepackage[table]{xcolor}
+\usetikzlibrary{arrows.meta, shapes.arrows, positioning}
+\begin{document}
+\small
+\begin{tikzpicture}[
+    stage/.style={single arrow, draw=black, fill=gray!25, thick,
+                  single arrow head extend=3mm, minimum height=3.2cm,
+                  minimum width=1.2cm, text width=2cm, align=center,
+                  inner sep=3pt, font=\footnotesize},
+    step/.style={rectangle, draw=black, fill=white, align=center,
+                 minimum width=1.8cm, minimum height=0.9cm, font=\footnotesize},
+    frame/.style={rectangle, draw=black, thick},
+    flow/.style={-{Latex[length=3mm]}, very thick},
+  ]
+
+  % ---- Stage 1: Registration ----
+  \node[stage] (s1) at (0,6) {};
+  \node[step] (r1) at (-0.9,6.3) {Profile\\Info};
+  \node[step] (r2) at (0.9,6.3) {Email +\\Hostel};
+  \node[step] (start) at (-1.3,4.6) {New\\Student};
+  \node[font=\bfseries] at (0,4.4) {Registration};
+  \draw[flow] (start) to[bend left=20] (r1);
+
+  % ---- Stage 2: Opt-out ----
+  \node[stage] (s2) at (6,3.2) {};
+  \node[step] (o1) at (5.1,3.5) {Select\\days};
+  \node[step] (o2) at (6.9,3.5) {Opt-out\\before cutoff};
+  \node[font=\bfseries] at (6,1.6) {Opt-out Planning};
+  \draw[flow] (s1.east) to[bend left=25] (s2.north);
+
+  % ---- Stage 3: Profile & Wallet (dark-header list) ----
+  \node[inner sep=0pt] (prof) at (2.2,-0.6) {%
+    \begin{tabular}{|c|}
+      \hline \rowcolor{black}\color{white}\bfseries Student Profile \\ \hline
+      Personal Information \\ \hline Wallet Balance \\ \hline
+      Transactions \\ \hline Menu \\ \hline Notices \\ \hline
+    \end{tabular}};
+  \draw[flow] (s2.south) to[bend left=25] (prof.east);
+
+\end{tikzpicture}
+\end{document}

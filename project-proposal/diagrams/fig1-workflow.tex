@@ -1,0 +1,32 @@
+% Figure 1 — Entire work-flow (ellipse style, like the reference)
+% Compile standalone, then export the PDF page as JPG.
+\documentclass[border=12pt]{standalone}
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta, positioning}
+\begin{document}
+\begin{tikzpicture}[
+    oval/.style={ellipse, draw=black, thick, minimum width=3cm,
+                 minimum height=1.3cm, align=center, font=\bfseries\small},
+    lbl/.style={font=\small, color=blue!60!black},
+    flow/.style={-{Latex[length=3mm]}, thick},
+  ]
+
+  \node[oval] (student) at (0, 8)      {Student};
+  \node[oval] (meal)    at (3.2, 5.5)  {Meal};
+  \node[oval] (staff)   at (3.2, 2.8)  {Counter\\Staff};
+  \node[oval] (warden)  at (-3.2, 2.0) {Warden /\\Committee};
+  \node[oval] (att)     at (3.2, 0)    {Attendance\\\& Wallet};
+
+  % Student takes Meal
+  \draw[flow] (student) to[bend left=15] node[lbl, right]{opt-in / takes} (meal);
+  % Meal served by Staff
+  \draw[flow] (meal) -- node[lbl, right]{served by} (staff);
+  % Staff creates Attendance
+  \draw[flow] (staff) -- node[lbl, right]{creates} (att);
+  % Warden plans Meal (curved up to meal)
+  \draw[flow] (warden) to[bend left=20] node[lbl, left, pos=0.6]{plans} (meal);
+  % Warden assigns Staff
+  \draw[flow] (warden) to[bend right=10] node[lbl, below]{assigns} (staff);
+
+\end{tikzpicture}
+\end{document}

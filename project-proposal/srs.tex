@@ -106,7 +106,7 @@ system administered by the super admin.
 
 \begin{figure}[h!]
     \centering
-    \includegraphics[width=11cm]{workflow.png}
+    \includegraphics[width=11cm]{Student Meal Flowchart.png}
     \caption{Entire work-flow}
     \label{fig:workflow}
 \end{figure}
@@ -351,18 +351,5 @@ dependency updates, database migrations for schema changes, and
 timezone-correct cutoff configuration (times are configured in IST).
 Reserved entities (guest meals, feedback, audit log) are present in the
 data model for future features and may be enabled as requirements evolve.
-
-\appendix
-\chapter{Appendix A: Constraints}
-\begin{itemize}
-  \item One mess per hostel (MVP); multi-mess support is deferred.
-  \item Meal cutoff and serving times are configured as IST wall-clock
-  times; meal dates are stored at UTC midnight.
-  \item Exactly one Warden and one Co-Warden per hostel; unlimited
-  Caretakers and Mess Staff.
-  \item Mess Staff do not use the mobile app and are created by
-  Wardens/Co-Wardens.
-  \item Student accounts require a valid institute email and a hostel.
-\end{itemize}
 
 \end{document}

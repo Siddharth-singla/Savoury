@@ -71,7 +71,7 @@ export const markServed = async (
         include: {
           booking: {
             include: {
-              student: { select: { id: true, name: true, email: true } },
+              student: { select: { id: true, name: true } },
               mealType: { select: { id: true, displayName: true, perMealRate: true } },
             },
           },
@@ -156,7 +156,7 @@ export const createOverride = async (
         include: {
           booking: {
             include: {
-              student: { select: { id: true, name: true, email: true } },
+              student: { select: { id: true, name: true } },
               mealType: { select: { id: true, displayName: true, perMealRate: true } },
             },
           },

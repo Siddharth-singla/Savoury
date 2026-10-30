@@ -8,6 +8,7 @@ describe('Auth Endpoints', () => {
   describe('POST /auth/register', () => {
     it('registers a new user', async () => {
       jest.spyOn(prisma.user, 'findUnique').mockResolvedValue(null);
+      jest.spyOn(prisma.hostel, 'findUnique').mockResolvedValue({ id: 'cljxyz12345', name: 'Hostel A', createdAt: new Date() } as any);
       jest.spyOn(prisma.user, 'create').mockResolvedValue({
         id: 'new-user-id',
         name: 'Test User',

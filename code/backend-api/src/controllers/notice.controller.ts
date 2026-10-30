@@ -147,15 +147,22 @@ export const createNotice = async (req: Request, res: Response, next: NextFuncti
 export const deleteNotice = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { id } = req.params;
-    const { userId, role } = req.user!;
+    const { userId, role, hostelId } = req.user!;
 
     const notice = await prisma.notice.findUnique({ where: { id } });
     if (!notice) {
       return res.status(404).json({ error: 'Notice not found' });
     }
 
-    if (!isHostelAdmin(role) && role !== 'SUPER_ADMIN' && notice.postedById !== userId) {
-      return res.status(403).json({ error: 'You can only delete your own notices' });
+    if (role !== 'SUPER_ADMIN') {
+      // Everyone except the Super Admin is limited to their own hostel's
+      // notices. Global notices (no hostel) belong to the Super Admin.
+      if (!notice.hostelId || notice.hostelId !== hostelId) {
+        return res.status(403).json({ error: 'You can only delete notices from your own hostel' });
+      }
+      if (!isHostelAdmin(role) && notice.postedById !== userId) {
+        return res.status(403).json({ error: 'You can only delete your own notices' });
+      }
     }
 
     await prisma.notice.delete({ where: { id } });

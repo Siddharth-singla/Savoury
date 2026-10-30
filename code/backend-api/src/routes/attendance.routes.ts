@@ -16,7 +16,7 @@ router.post('/mark-served', authorizeRoles('COUNTER_STAFF', 'MESS_COMMITTEE', ..
 // New checkin route for offline-first check-in
 router.post('/checkin', authorizeRoles('COUNTER_STAFF', 'MESS_COMMITTEE', ...HOSTEL_ADMIN_ROLES), markServed);
 
-// Override attendance
-router.post('/override', authorizeRoles('MESS_COMMITTEE', ...HOSTEL_ADMIN_ROLES), overrideAttendance);
+// Override attendance (walk-ins, ignores opt-out): hostel admins only, audit-logged
+router.post('/override', authorizeRoles(...HOSTEL_ADMIN_ROLES), overrideAttendance);
 
 export default router;

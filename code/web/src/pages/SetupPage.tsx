@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { setupSuperAdmin } from '../api/auth';
-import { User, Mail, Lock, Eye, EyeOff, AlertCircle, ArrowRight } from 'lucide-react';
+import { User, Mail, Lock, Eye, EyeOff, AlertCircle, ArrowRight, KeyRound } from 'lucide-react';
 
 /* ── Design tokens — warm light theme ── */
 const C = {
@@ -32,6 +32,7 @@ export default function SetupPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirm, setConfirm] = useState('');
+  const [setupToken, setSetupToken] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -40,7 +41,7 @@ export default function SetupPage() {
     e.preventDefault();
     setError('');
 
-    if (!name.trim() || !email.trim() || !password || !confirm) {
+    if (!setupToken.trim() || !name.trim() || !email.trim() || !password || !confirm) {
       setError('All fields are required.');
       return;
     }
@@ -59,7 +60,7 @@ export default function SetupPage() {
 
     setLoading(true);
     try {
-      const result = await setupSuperAdmin(name.trim(), email.trim(), password);
+      const result = await setupSuperAdmin(name.trim(), email.trim(), password, setupToken.trim());
       login(result.accessToken, result.user);
       navigate('/');
     } catch (err: any) {
@@ -230,6 +231,37 @@ export default function SetupPage() {
           )}
 
           <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+            {/* Setup code: must match SETUP_TOKEN on the server */}
+            <div>
+              <label style={{
+                display: 'block', fontSize: 11, fontWeight: 700,
+                color: C.textSub, marginBottom: 4, textTransform: 'uppercase', letterSpacing: '0.06em',
+              }}>
+                Setup Code
+              </label>
+              <div className="input-box" style={{
+                display: 'flex', alignItems: 'center', gap: 10,
+                background: C.surface2, borderRadius: 12,
+                padding: '10px 14px', border: `1px solid ${C.border}`,
+                transition: 'all 0.15s',
+              }}>
+                <KeyRound size={16} color={C.textMuted} />
+                <input
+                  className="setup-input"
+                  type="password"
+                  value={setupToken}
+                  onChange={e => setSetupToken(e.target.value)}
+                  placeholder="SETUP_TOKEN from the server settings"
+                  autoComplete="off"
+                  disabled={loading}
+                  style={{
+                    flex: 1, background: 'transparent', border: 'none',
+                    outline: 'none', color: C.text, fontSize: 14, fontFamily: 'inherit',
+                  }}
+                />
+              </div>
+            </div>
+
             {/* Full Name */}
             <div>
               <label style={{

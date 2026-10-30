@@ -4,7 +4,10 @@ const BASE_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:3000';
 
 export const TOKEN_KEY = 'savoury_web_token';
 
-const apiClient = axios.create({ baseURL: BASE_URL, timeout: 10000 });
+// Render's free tier sleeps when idle and takes ~30-60s to wake up. A 10s
+// timeout made the first requests after idle fail even though the server
+// was just booting. Matches the mobile client.
+const apiClient = axios.create({ baseURL: BASE_URL, timeout: 60000 });
 
 apiClient.interceptors.request.use((config) => {
   const token = localStorage.getItem(TOKEN_KEY);

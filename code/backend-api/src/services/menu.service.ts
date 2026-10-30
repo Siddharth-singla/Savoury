@@ -33,6 +33,8 @@ export interface UpsertMenuData {
 export const upsertMenus = async (menusToUpsert: UpsertMenuData[]) => {
   const results: Prisma.MenuGetPayload<{}>[] = [];
 
+  // A full week is ~21 sequential round trips to the DB; Prisma's default 5s
+  // interactive-transaction timeout is too tight for that over the network.
   await prisma.$transaction(async (tx) => {
     for (const menu of menusToUpsert) {
       const upserted = await tx.menu.upsert({
@@ -53,7 +55,7 @@ export const upsertMenus = async (menusToUpsert: UpsertMenuData[]) => {
       });
       results.push(upserted);
     }
-  });
+  }, { maxWait: 10_000, timeout: 30_000 });
 
   return results;
 };

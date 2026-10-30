@@ -339,7 +339,9 @@ export default function DashboardPage() {
   const { data, isLoading, isError, error, refetch } = useQuery({
     queryKey: ['headcount', isoDate],
     queryFn: () => getHeadcount(isoDate),
-    refetchInterval: 5_000,
+    // Headcount is ~9 DB queries; polling every 5s per open dashboard starved
+    // the DB connection used by check-ins. 30s is plenty for a headcount view.
+    refetchInterval: 30_000,
     staleTime: 25_000,
   });
 

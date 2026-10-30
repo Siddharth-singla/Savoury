@@ -290,19 +290,33 @@ export const resolveCashoutRequest = async (req: Request, res: Response, next: N
         }
       }
 
+      // Atomically claim the request so two concurrent approvals (double-click,
+      // two admins) can't both pass the PENDING check and debit twice.
+      const claimed = await tx.cashoutRequest.updateMany({
+        where: { id, status: 'PENDING' },
+        data: { status, resolutionNote, resolvedAt: new Date(), resolvedById: adminId },
+      });
+      if (claimed.count === 0) {
+        throw { status: 400, message: 'Request is already resolved' };
+      }
+
       if (status === 'APPROVED') {
         const wallet = await tx.walletAccount.findUnique({
           where: { studentId_semesterLabel: { studentId: cashoutRequest.studentId, semesterLabel: cashoutRequest.semesterLabel } }
         });
 
-        if (!wallet || wallet.balance.toNumber() < cashoutRequest.requestedAmount.toNumber()) {
+        if (!wallet) {
           throw { status: 400, message: 'Insufficient balance for cashout' };
         }
 
-        const updatedWallet = await tx.walletAccount.update({
-          where: { id: wallet.id },
+        // Conditional decrement: only succeeds if the balance still covers it.
+        const debited = await tx.walletAccount.updateMany({
+          where: { id: wallet.id, balance: { gte: cashoutRequest.requestedAmount } },
           data: { balance: { decrement: cashoutRequest.requestedAmount } }
         });
+        if (debited.count === 0) {
+          throw { status: 400, message: 'Insufficient balance for cashout' };
+        }
 
         await tx.walletTransaction.create({
           data: {
@@ -315,15 +329,7 @@ export const resolveCashoutRequest = async (req: Request, res: Response, next: N
         });
       }
 
-      const updatedRequest = await tx.cashoutRequest.update({
-        where: { id },
-        data: {
-          status,
-          resolutionNote,
-          resolvedAt: new Date(),
-          resolvedById: adminId,
-        }
-      });
+      const updatedRequest = await tx.cashoutRequest.findUniqueOrThrow({ where: { id } });
 
       return updatedRequest;
     });

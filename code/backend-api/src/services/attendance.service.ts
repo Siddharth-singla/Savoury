@@ -84,7 +84,10 @@ export const markServed = async (
       });
 
       if (!activeWallet) {
-        throw new Error('No active wallet account found for this student');
+        // 422, not 500: retrying can't fix this until an admin sets up the wallet.
+        const walletError = new Error('Student has no wallet yet. Top up their wallet from the Wallet page first.');
+        (walletError as any).status = 422;
+        throw walletError;
       }
 
       const updatedWallet = await tx.walletAccount.update({
@@ -166,7 +169,10 @@ export const createOverride = async (
       });
 
       if (!activeWallet) {
-        throw new Error('No active wallet account found for this student');
+        // 422, not 500: retrying can't fix this until an admin sets up the wallet.
+        const walletError = new Error('Student has no wallet yet. Top up their wallet from the Wallet page first.');
+        (walletError as any).status = 422;
+        throw walletError;
       }
 
       const updatedWallet = await tx.walletAccount.update({

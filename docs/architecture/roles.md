@@ -4,7 +4,7 @@ Authentication is stateless JWT (bcrypt-hashed passwords, 7-day tokens).
 `authenticate` verifies the bearer token and sets `req.user`;
 `authorizeRoles(...)` guards each route. Fine-grained rules are enforced
 in the controllers. Role groups live in
-`backend-api/src/constants/roles.ts`.
+`code/backend-api/src/constants/roles.ts`.
 
 ## Roles
 

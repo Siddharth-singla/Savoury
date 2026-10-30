@@ -5,9 +5,9 @@ Savoury is a hostel mess (dining-hall) management platform built as
 
 | Component | Stack | Audience |
 |-----------|-------|----------|
-| Backend API (`backend-api/`) | Express + TypeScript + Prisma, PostgreSQL (Supabase) | — |
-| Web console (`web/`) | Vite + React + react-router | Admins, wardens, mess staff |
-| Mobile app (`mobile/`) | Expo / React Native | Students |
+| Backend API (`code/backend-api/`) | Express + TypeScript + Prisma, PostgreSQL (Supabase) | — |
+| Web console (`code/web/`) | Vite + React + react-router | Admins, wardens, mess staff |
+| Mobile app (`code/mobile/`) | Expo / React Native | Students |
 
 ## Request flow (backend)
 

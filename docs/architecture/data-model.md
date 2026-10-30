@@ -1,7 +1,7 @@
 # Data Model
 
 The database is PostgreSQL (Supabase) managed with Prisma
-(`backend-api/prisma/schema.prisma`). A pooled `DATABASE_URL` is used at
+(`code/backend-api/prisma/schema.prisma`). A pooled `DATABASE_URL` is used at
 runtime and a `DIRECT_URL` for migrations.
 
 ## Entities

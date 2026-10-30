@@ -1,6 +1,6 @@
 # Web Console
 
-Vite + React + react-router admin/warden/staff console in `web/`.
+Vite + React + react-router admin/warden/staff console in `code/web/`.
 
 ## Audience & pages
 

@@ -41,6 +41,19 @@ jobs:
         run: |
           npx prisma migrate deploy
           npx prisma migrate diff --from-url "$DATABASE_URL" --to-schema-datamodel prisma/schema.prisma --exit-code
+      - name: Migrations also work on a database built with db push (like production)
+        run: |
+          psql "$DATABASE_URL" -c 'DROP SCHEMA public CASCADE; CREATE SCHEMA public;'
+          # Recreate the pre-email-verification schema with db push, no migration history
+          sed '/emailVerified/d; /emailVerification /d' prisma/schema.prisma | sed '/^model EmailVerification {/,/^}/d' > /tmp/old.prisma
+          npx prisma db push --schema /tmp/old.prisma --skip-generate --accept-data-loss
+          psql "$DATABASE_URL" -c "INSERT INTO users (id,name,email,\"passwordHash\",role,\"updatedAt\") VALUES ('u1','Old','old@thapar.edu','x','STUDENT',now());"
+          RENDER=true node scripts/migrate-on-render.js
+          npx prisma migrate diff --from-url "$DATABASE_URL" --to-schema-datamodel prisma/schema.prisma --exit-code
+          test "$(psql "$DATABASE_URL" -tAc "SELECT \"emailVerified\" FROM users WHERE id='u1'")" = "t"
+          echo "Existing user kept verified"
+          psql "$DATABASE_URL" -tAc "INSERT INTO users (id,name,email,\"passwordHash\",role,\"updatedAt\") VALUES ('u2','New','new@thapar.edu','x','STUDENT',now()) RETURNING \"emailVerified\"" | grep -q '^f$'
+          echo "New users default to unverified"
 
   web:
     runs-on: ubuntu-latest

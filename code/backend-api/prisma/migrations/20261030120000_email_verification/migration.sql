@@ -1,12 +1,21 @@
 -- AlterTable
-ALTER TABLE "users" ADD COLUMN "emailVerified" BOOLEAN NOT NULL DEFAULT false;
-
--- Every account that exists before this migration is treated as verified,
--- so nobody already using the app gets locked out.
-UPDATE "users" SET "emailVerified" = true;
+-- Every account that exists before this migration is treated as verified
+-- (the column is created with DEFAULT true for existing rows, then the
+-- default is switched to false for new sign-ups), so nobody already using
+-- the app gets locked out.
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM information_schema.columns
+    WHERE table_name = 'users' AND column_name = 'emailVerified'
+  ) THEN
+    ALTER TABLE "users" ADD COLUMN "emailVerified" BOOLEAN NOT NULL DEFAULT true;
+    ALTER TABLE "users" ALTER COLUMN "emailVerified" SET DEFAULT false;
+  END IF;
+END $$;
 
 -- CreateTable
-CREATE TABLE "email_verifications" (
+CREATE TABLE IF NOT EXISTS "email_verifications" (
     "id" TEXT NOT NULL,
     "userId" TEXT NOT NULL,
     "tokenHash" TEXT NOT NULL,
@@ -18,10 +27,16 @@ CREATE TABLE "email_verifications" (
 );
 
 -- CreateIndex
-CREATE UNIQUE INDEX "email_verifications_userId_key" ON "email_verifications"("userId");
+CREATE UNIQUE INDEX IF NOT EXISTS "email_verifications_userId_key" ON "email_verifications"("userId");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "email_verifications_tokenHash_key" ON "email_verifications"("tokenHash");
+CREATE UNIQUE INDEX IF NOT EXISTS "email_verifications_tokenHash_key" ON "email_verifications"("tokenHash");
 
 -- AddForeignKey
-ALTER TABLE "email_verifications" ADD CONSTRAINT "email_verifications_userId_fkey" FOREIGN KEY ("userId") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+DO $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'email_verifications_userId_fkey') THEN
+    ALTER TABLE "email_verifications" ADD CONSTRAINT "email_verifications_userId_fkey"
+      FOREIGN KEY ("userId") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+  END IF;
+END $$;

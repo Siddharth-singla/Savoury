@@ -151,7 +151,7 @@ export const listUsers = async (req: Request, res: Response, next: NextFunction)
       prisma.user.findMany({
         where,
         select: {
-          id: true, name: true, email: true, role: true,
+          id: true, name: true, email: true, role: true, emailVerified: true,
           hostelId: true, rollNo: true, phone: true, roomNo: true, createdAt: true,
           hostel: { select: { name: true } },
         },
@@ -413,6 +413,46 @@ export const deleteUser = async (req: Request, res: Response, next: NextFunction
       where: { id },
     });
     audit(userId, 'USER_DELETE', id, { role: targetUser.role, hostelId: targetUser.hostelId }, null);
+
+    res.status(200).json({ success: true });
+  } catch (err) {
+    next(err);
+  }
+};
+
+/**
+ * POST /users/:id/verify-email
+ * Lets a warden/caretaker (own hostel, student accounts) or the Super Admin
+ * mark an account's email as verified, e.g. when the email never arrives.
+ */
+export const verifyUserEmail = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { id } = req.params;
+    const { hostelId: callerHostelId, role: callerRole, userId: callerId } = req.user!;
+
+    const targetUser = await prisma.user.findUnique({
+      where: { id },
+      select: { id: true, hostelId: true, role: true, emailVerified: true },
+    });
+    if (!targetUser) return res.status(404).json({ error: 'User not found' });
+
+    if (callerRole !== 'SUPER_ADMIN') {
+      if (!isHostelAdmin(callerRole)) return res.status(403).json({ error: 'Forbidden: Insufficient privileges' });
+      if (!callerHostelId || targetUser.hostelId !== callerHostelId) {
+        return res.status(403).json({ error: 'You can only manage users in your own hostel' });
+      }
+      if (!isStudentRole(targetUser.role)) {
+        return res.status(403).json({ error: 'Only student accounts can be verified here.' });
+      }
+    }
+
+    if (!targetUser.emailVerified) {
+      await prisma.$transaction([
+        prisma.user.update({ where: { id }, data: { emailVerified: true } }),
+        prisma.emailVerification.deleteMany({ where: { userId: id } }),
+      ]);
+      audit(callerId, 'EMAIL_VERIFIED_MANUALLY', id, { emailVerified: false }, { emailVerified: true });
+    }
 
     res.status(200).json({ success: true });
   } catch (err) {

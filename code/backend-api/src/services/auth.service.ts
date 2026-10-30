@@ -105,21 +105,25 @@ export const registerUser = async (data: RegisterData) => {
   });
 
   let verificationRequired = false;
+  let emailSent = false;
   if (!newUser.emailVerified) {
     verificationRequired = true;
     try {
       await sendVerificationEmail(newUser);
+      emailSent = true;
     } catch (err) {
-      // The account still exists; logging in re-sends the link.
+      // The account still exists; logging in retries the email.
       console.error('[verify] failed to send verification email', err);
     }
   }
 
   return {
     verificationRequired,
-    message: verificationRequired
-      ? `Account created. We've sent a verification link to ${newUser.email}. Open it, then log in. Check your spam folder if you don't see it.`
-      : 'Account created.',
+    message: !verificationRequired
+      ? 'Account created.'
+      : emailSent
+        ? `Account created. We've sent a verification link to ${newUser.email}. Open it, then log in. Check your spam folder if you don't see it.`
+        : `Account created, but we couldn't send the verification email right now. Try logging in in a few minutes to get a new link, or ask your warden to verify your account.`,
     user: {
       id: newUser.id,
       name: newUser.name,
@@ -144,16 +148,17 @@ export const loginUser = async (email: string, password: string) => {
 
   // Checked only after the password, so this can't be used to probe emails.
   if (!user.emailVerified && isVerificationEnabled()) {
+    let message: string;
     try {
-      await sendVerificationEmail(user); // no-op if one was sent in the last minute
+      const sent = await sendVerificationEmail(user); // false = one was sent in the last minute
+      message = sent
+        ? `Please verify your email first. We've sent a verification link to ${user.email}. Open it, then log in again. Check your spam folder if you don't see it.`
+        : `Please verify your email first. A verification link was sent to ${user.email} less than a minute ago. Check your inbox and spam folder.`;
     } catch (err) {
       console.error('[verify] failed to send verification email', err);
+      message = `Please verify your email first. We couldn't send the verification email right now. Try again in a few minutes, or ask your warden to verify your account.`;
     }
-    throw httpError(
-      403,
-      `Please verify your email first. We've sent a verification link to ${user.email}. Open it, then log in again. Check your spam folder if you don't see it.`,
-      'EMAIL_NOT_VERIFIED'
-    );
+    throw httpError(403, message, 'EMAIL_NOT_VERIFIED');
   }
 
   const activeWallet = await prisma.walletAccount.findFirst({

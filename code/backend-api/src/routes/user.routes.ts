@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { listUsers, createUser, updateUser, updateUserRole, deleteUser, getMe, updateMe } from '../controllers/user.controller';
+import { listUsers, createUser, updateUser, updateUserRole, deleteUser, getMe, updateMe, verifyUserEmail } from '../controllers/user.controller';
 import { authenticate, authorizeRoles } from '../middleware/auth.middleware';
 import { HOSTEL_ADMIN_ROLES } from '../constants/roles';
 
@@ -20,5 +20,6 @@ router.post('/', createUser);
 router.put('/:id', updateUser);
 router.patch('/:id/role', updateUserRole);
 router.delete('/:id', deleteUser);
+router.post('/:id/verify-email', verifyUserEmail);
 
 export default router;

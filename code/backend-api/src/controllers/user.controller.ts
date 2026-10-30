@@ -225,6 +225,8 @@ export const createUser = async (req: Request, res: Response, next: NextFunction
         passwordHash,
         role: data.role as Role,
         hostelId: targetHostelId,
+        // Accounts created by an admin are vouched for by that admin.
+        emailVerified: true,
         rollNo: data.rollNo || null,
         phone: data.phone || null,
         roomNo: data.roomNo || null,

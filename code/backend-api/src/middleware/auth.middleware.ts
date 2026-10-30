@@ -2,6 +2,7 @@ import { Request, Response, NextFunction } from 'express';
 import prisma from '../db';
 import { verifyToken, passwordFingerprint } from '../utils/token';
 import { isStudentRole } from '../constants/roles';
+import { isVerificationEnabled } from '../services/verification.service';
 
 /**
  * Verifies the JWT, then loads the user's CURRENT role and hostel from the
@@ -27,10 +28,14 @@ export const authenticate = async (req: Request, res: Response, next: NextFuncti
   try {
     const user = await prisma.user.findUnique({
       where: { id: payload.userId },
-      select: { id: true, role: true, hostelId: true, passwordHash: true },
+      select: { id: true, role: true, hostelId: true, passwordHash: true, emailVerified: true },
     });
     if (!user || !payload.pv || payload.pv !== passwordFingerprint(user.passwordHash)) {
       return res.status(401).json({ error: 'Session expired. Please log in again.' });
+    }
+
+    if (user.emailVerified === false && isVerificationEnabled()) {
+      return res.status(403).json({ error: 'Please verify your email address first.', code: 'EMAIL_NOT_VERIFIED' });
     }
 
     // Staff roles are always hostel-scoped. A staff account without a hostel

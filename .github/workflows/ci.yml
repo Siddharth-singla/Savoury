@@ -11,6 +11,17 @@ jobs:
     defaults:
       run:
         working-directory: code/backend-api
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: user
+          POSTGRES_PASSWORD: pass
+          POSTGRES_DB: db
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U user -d db"
+          --health-interval 5s --health-timeout 5s --health-retries 10
     env:
       JWT_SECRET: ci-only-secret-not-used-in-production
       DATABASE_URL: postgresql://user:pass@localhost:5432/db
@@ -26,6 +37,10 @@ jobs:
       - run: npx prisma generate
       - run: npm run build
       - run: npm test
+      - name: Migrations apply cleanly and match schema.prisma
+        run: |
+          npx prisma migrate deploy
+          npx prisma migrate diff --from-url "$DATABASE_URL" --to-schema-datamodel prisma/schema.prisma --exit-code
 
   web:
     runs-on: ubuntu-latest

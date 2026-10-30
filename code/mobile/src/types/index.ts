@@ -78,5 +78,8 @@ export interface LoginResponse {
 
 export interface RegisterResponse {
   user: User;
+  /** True when the account must be activated from the emailed link first. */
+  verificationRequired?: boolean;
+  message?: string;
 }
 

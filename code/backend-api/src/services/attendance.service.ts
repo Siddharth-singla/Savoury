@@ -90,10 +90,23 @@ export const markServed = async (
         throw walletError;
       }
 
-      const updatedWallet = await tx.walletAccount.update({
-        where: { id: activeWallet.id },
-        data: { balance: { decrement: attendance.booking.mealType.perMealRate } },
+      // Conditional decrement: only succeeds if the balance covers the meal.
+      // Doing the check inside the UPDATE means two simultaneous check-ins
+      // can't both pass. Throwing rolls back the attendance row too.
+      const rate = attendance.booking.mealType.perMealRate;
+      const debited = await tx.walletAccount.updateMany({
+        where: { id: activeWallet.id, balance: { gte: rate } },
+        data: { balance: { decrement: rate } },
       });
+      if (debited.count === 0) {
+        const balanceError = new Error(
+          `Insufficient balance: ₹${activeWallet.balance.toFixed(2)} available, ₹${rate.toFixed(2)} needed for ${attendance.booking.mealType.displayName}. Top up the wallet first.`
+        );
+        (balanceError as any).status = 402;
+        (balanceError as any).code = 'INSUFFICIENT_BALANCE';
+        throw balanceError;
+      }
+      const updatedWallet = activeWallet;
 
       await tx.walletTransaction.create({
         data: {
@@ -175,10 +188,23 @@ export const createOverride = async (
         throw walletError;
       }
 
-      const updatedWallet = await tx.walletAccount.update({
-        where: { id: activeWallet.id },
-        data: { balance: { decrement: attendance.booking.mealType.perMealRate } },
+      // Conditional decrement: only succeeds if the balance covers the meal.
+      // Doing the check inside the UPDATE means two simultaneous check-ins
+      // can't both pass. Throwing rolls back the attendance row too.
+      const rate = attendance.booking.mealType.perMealRate;
+      const debited = await tx.walletAccount.updateMany({
+        where: { id: activeWallet.id, balance: { gte: rate } },
+        data: { balance: { decrement: rate } },
       });
+      if (debited.count === 0) {
+        const balanceError = new Error(
+          `Insufficient balance: ₹${activeWallet.balance.toFixed(2)} available, ₹${rate.toFixed(2)} needed for ${attendance.booking.mealType.displayName}. Top up the wallet first.`
+        );
+        (balanceError as any).status = 402;
+        (balanceError as any).code = 'INSUFFICIENT_BALANCE';
+        throw balanceError;
+      }
+      const updatedWallet = activeWallet;
 
       await tx.walletTransaction.create({
         data: {

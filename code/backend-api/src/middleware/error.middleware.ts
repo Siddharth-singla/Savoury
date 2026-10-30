@@ -15,7 +15,9 @@ export const errorMiddleware = (err: any, req: Request, res: Response, next: Nex
   }
 
   if (err.status && err.message) {
-    return res.status(err.status as number).json({ error: err.message as string });
+    const body: Record<string, string> = { error: err.message as string };
+    if (typeof err.code === 'string' && /^[A-Z_]+$/.test(err.code)) body.code = err.code;
+    return res.status(err.status as number).json(body);
   }
 
   console.error('[Unhandled Error]', err);

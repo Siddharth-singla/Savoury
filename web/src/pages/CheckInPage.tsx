@@ -71,6 +71,9 @@ export default function CheckInPage() {
   }>>([]);
 
   const [pendingSyncs, setPendingSyncs] = useState<string[]>([]);
+  const pendingSyncsRef = useRef<string[]>([]);
+  const mealTypeIdRef = useRef<string>('');
+  const mealTargetDateRef = useRef<string>('');
   const syncTimer = useRef<ReturnType<typeof setInterval> | null>(null);
   const isSyncing = useRef(false);
   const [recentRate, setRecentRate] = useState(0);
@@ -116,6 +119,10 @@ export default function CheckInPage() {
     return new Date(`${year}-${month}-${day}T12:00:00Z`).toISOString();
   }, [mealTypes, mealTypeId]);
 
+  // Keep refs in sync so the stable sync interval can always read latest values
+  useEffect(() => { mealTypeIdRef.current = mealTypeId; }, [mealTypeId]);
+  useEffect(() => { mealTargetDateRef.current = mealTargetDate; }, [mealTargetDate]);
+
   const mealStatus = useMemo(() => {
     if (!mealTypes || !mealTypeId || !mealTargetDate) return { isActive: false, hasEnded: false, hasNotStarted: false };
     const mt = mealTypes.find((m: any) => m.id === mealTypeId);
@@ -158,19 +165,24 @@ export default function CheckInPage() {
       const now = Date.now();
       recentWindow.current = recentWindow.current.filter(t => now - t < 5 * 60 * 1000);
       setRecentRate(recentWindow.current.length);
-    }, 10000);
+    }, 1000); // 1s for snappy count updates
     return () => { if (rateTimer.current) clearInterval(rateTimer.current); };
   }, []);
 
-  /* Sync queue */
+  /* Sync queue — stable interval, reads latest values from refs to avoid stale closures */
   useEffect(() => {
     syncTimer.current = setInterval(async () => {
-      if (pendingSyncs.length === 0 || isSyncing.current) return;
+      // Read live queue from ref — never stale, never causes interval churn
+      if (pendingSyncsRef.current.length === 0 || isSyncing.current) return;
       isSyncing.current = true;
-      const studentId = pendingSyncs[0];
+      const studentId = pendingSyncsRef.current[0];
       try {
-        const res = await checkIn({ studentId, mealTypeId, date: mealTargetDate });
-        if (res.success) setPendingSyncs(prev => prev.slice(1));
+        const res = await checkIn({ studentId, mealTypeId: mealTypeIdRef.current, date: mealTargetDateRef.current });
+        if (res.success) {
+          // Remove from both ref and state atomically
+          pendingSyncsRef.current = pendingSyncsRef.current.slice(1);
+          setPendingSyncs(pendingSyncsRef.current);
+        }
       } catch (err: any) {
         console.warn('Sync failed, will retry...', err.message);
       } finally {
@@ -178,13 +190,17 @@ export default function CheckInPage() {
       }
     }, 2000);
     return () => { if (syncTimer.current) clearInterval(syncTimer.current); };
-  }, [pendingSyncs, mealTypeId, mealTargetDate]);
+  }, []); // ← stable: runs once on mount, uses refs for all live data
 
   const handleMarkServed = (studentId: string) => {
     const student = roster.find(s => s.studentId === studentId);
     if (!student || student.isServed) return;
     setRoster(prev => prev.map(s => s.studentId === studentId ? { ...s, isServed: true } : s));
-    setPendingSyncs(prev => { if (prev.includes(studentId)) return prev; return [...prev, studentId]; });
+    // Keep ref and state in sync so the stable interval always sees latest queue
+    if (!pendingSyncsRef.current.includes(studentId)) {
+      pendingSyncsRef.current = [...pendingSyncsRef.current, studentId];
+    }
+    setPendingSyncs(pendingSyncsRef.current);
     if (student) {
       setCheckedInLog(prev => [{ student, timestamp: new Date().toISOString() }, ...prev].slice(0, 50));
       recentWindow.current.push(Date.now());

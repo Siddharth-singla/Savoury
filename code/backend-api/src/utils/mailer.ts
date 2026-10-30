@@ -8,7 +8,16 @@
  *   EMAIL_FROM_NAME — display name, defaults to "Savoury"
  */
 
-export const isEmailConfigured = (): boolean => !!process.env.BREVO_API_KEY && !!process.env.EMAIL_FROM;
+// Tolerate stray spaces or quotes from copy-pasting the key into Render.
+const clean = (v: string | undefined) => (v ?? '').trim().replace(/^["']|["']$/g, '');
+const apiKey = () => clean(process.env.BREVO_API_KEY);
+const fromEmail = () => clean(process.env.EMAIL_FROM);
+
+export const isEmailConfigured = (): boolean => !!apiKey() && !!fromEmail();
+
+if (apiKey().startsWith('xsmtpsib-')) {
+  console.error('[mail] BREVO_API_KEY is an SMTP key (xsmtpsib-...). Create an API key (xkeysib-...) under SMTP & API -> API Keys.');
+}
 
 export async function sendEmail(to: string, subject: string, html: string, text: string): Promise<void> {
   if (!isEmailConfigured()) {
@@ -18,12 +27,12 @@ export async function sendEmail(to: string, subject: string, html: string, text:
   const res = await fetch('https://api.brevo.com/v3/smtp/email', {
     method: 'POST',
     headers: {
-      'api-key': process.env.BREVO_API_KEY as string,
+      'api-key': apiKey(),
       'content-type': 'application/json',
       accept: 'application/json',
     },
     body: JSON.stringify({
-      sender: { email: process.env.EMAIL_FROM, name: process.env.EMAIL_FROM_NAME || 'Savoury' },
+      sender: { email: fromEmail(), name: process.env.EMAIL_FROM_NAME || 'Savoury' },
       to: [{ email: to }],
       subject,
       htmlContent: html,

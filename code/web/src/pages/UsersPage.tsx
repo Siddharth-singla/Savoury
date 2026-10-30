@@ -1,11 +1,11 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { listUsers, updateRole, updateUser, deleteUser, createUser } from '../api/users';
+import { listUsers, updateRole, updateUser, deleteUser, createUser, verifyUserEmail } from '../api/users';
 import type { UserRow } from '../api/users';
 import { listHostels } from '../api/hostels';
 import type { Hostel } from '../api/hostels';
 import { useAuth } from '../context/AuthContext';
-import { Search, SlidersHorizontal, Pencil, Trash2, X, Users, GraduationCap, UtensilsCrossed, ShieldAlert, UserPlus } from 'lucide-react';
+import { Search, SlidersHorizontal, Pencil, Trash2, X, Users, GraduationCap, UtensilsCrossed, ShieldAlert, UserPlus, MailCheck } from 'lucide-react';
 
 /* ── Design tokens — warm light theme ── */
 const C = {
@@ -220,6 +220,22 @@ export default function UsersPage() {
       alert(err.response?.data?.error || 'Failed to delete user.');
     },
   });
+
+  const verifyMutation = useMutation({
+    mutationFn: (id: string) => verifyUserEmail(id),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['users'] });
+    },
+    onError: (err: any) => {
+      alert(err.response?.data?.error || 'Failed to verify user.');
+    },
+  });
+
+  const handleVerify = (u: UserRow) => {
+    if (window.confirm(`Mark ${u.email} as verified? Only do this if you're sure this email belongs to ${u.name}.`)) {
+      verifyMutation.mutate(u.id);
+    }
+  };
 
   const handleDelete = (u: UserRow) => {
     if (window.confirm(`Are you sure you want to delete user "${u.name}"? This action cannot be undone.`)) {
@@ -562,6 +578,15 @@ export default function UsersPage() {
                                 </div>
                                 <div style={{ fontSize: 12, color: C.textMuted, marginTop: 2 }}>
                                   {u.email} {u.rollNo ? `• ${u.rollNo}` : ''}
+                                  {u.emailVerified === false && (
+                                    <span style={{
+                                      marginLeft: 8, padding: '1px 8px', borderRadius: 10,
+                                      background: '#fef3c7', color: '#b45309',
+                                      fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.04em',
+                                    }}>
+                                      Unverified
+                                    </span>
+                                  )}
                                 </div>
                               </div>
                             </div>
@@ -645,6 +670,31 @@ export default function UsersPage() {
                           {/* ACTIONS column */}
                           <td style={{ padding: '16px 24px', textAlign: 'right' }}>
                             <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, position: 'relative' }}>
+                              {/* Manually verify an account whose verification email never arrived */}
+                              {u.emailVerified === false && (
+                                <button
+                                  onClick={(e) => { e.stopPropagation(); handleVerify(u); }}
+                                  disabled={verifyMutation.isPending}
+                                  title="Mark email as verified"
+                                  style={{
+                                    background: 'rgba(58,107,58,0.12)',
+                                    border: '1px solid rgba(58,107,58,0.25)',
+                                    borderRadius: 8,
+                                    color: '#3a6b3a',
+                                    cursor: 'pointer',
+                                    padding: '6px 10px',
+                                    fontSize: 12,
+                                    fontWeight: 600,
+                                    display: 'inline-flex',
+                                    alignItems: 'center',
+                                    gap: 5,
+                                  }}
+                                >
+                                  <MailCheck size={13} strokeWidth={2} />
+                                  Verify
+                                </button>
+                              )}
+
                               {/* Direct Edit Button */}
                               <button
                                 onClick={(e) => { e.stopPropagation(); setEditingUser(u); }}

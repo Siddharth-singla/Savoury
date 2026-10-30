@@ -11,6 +11,7 @@ export interface UserRow {
   roomNo?: string | null;
   createdAt: string;
   hostel?: { name: string } | null;
+  emailVerified?: boolean;
 }
 
 export interface UsersResponse {
@@ -59,4 +60,8 @@ export const createUser = async (payload: {
 
 export const deleteUser = async (id: string): Promise<void> => {
   await client.delete(`/users/${id}`);
+};
+
+export const verifyUserEmail = async (id: string): Promise<void> => {
+  await client.post(`/users/${id}/verify-email`);
 };

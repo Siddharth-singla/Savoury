@@ -42,7 +42,8 @@ export async function sendVerificationEmail(user: { id: string; name: string; em
 
   const link = `${apiBaseUrl()}/auth/verify-email?token=${encodeURIComponent(token)}`;
   const name = escapeHtml(user.name);
-  await sendEmail(
+  try {
+    await sendEmail(
     user.email,
     'Verify your Savoury account',
     `<div style="font-family:Arial,sans-serif;max-width:480px;margin:auto;color:#1a120b">
@@ -54,7 +55,14 @@ export async function sendVerificationEmail(user: { id: string; name: string; em
       <p style="font-size:13px;color:#7a6855">This link expires in 24 hours. If you didn't create a Savoury account, you can ignore this email.</p>
     </div>`,
     `Welcome to Savoury, ${user.name}.\n\nVerify your email by opening this link (valid for 24 hours):\n${link}\n\nIf you didn't create a Savoury account, ignore this email.`
-  );
+    );
+  } catch (err) {
+    // Nothing was delivered, so don't let the 1-minute cooldown block a retry.
+    await prisma.emailVerification
+      .update({ where: { userId: user.id }, data: { lastSentAt: new Date(0) } })
+      .catch(() => undefined);
+    throw err;
+  }
   return true;
 }
 

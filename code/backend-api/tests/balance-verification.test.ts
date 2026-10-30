@@ -144,6 +144,28 @@ describe('Email verification', () => {
     expect(fetchMock).not.toHaveBeenCalled();
   });
 
+  it('tells the student when the email could not be sent (e.g. Brevo rejects the request)', async () => {
+    enableEmail();
+    fetchMock.mockResolvedValue({ ok: false, status: 401, text: async () => '{"message":"unrecognised IP address"}' });
+    jest.spyOn(prisma.user, 'findUnique').mockResolvedValue(null);
+    jest.spyOn(prisma.hostel, 'findUnique').mockResolvedValue({ id: 'h1' } as any);
+    jest.spyOn(prisma.user, 'create').mockImplementation((async (args: any) => ({
+      id: 'u1', name: 'New', email: 'new@thapar.edu', role: 'STUDENT', hostelId: 'h1', ...args.data,
+    })) as any);
+    jest.spyOn(prisma.emailVerification, 'findUnique').mockResolvedValue(null);
+    jest.spyOn(prisma.emailVerification, 'upsert').mockResolvedValue({} as any);
+    const resetCooldown = jest.spyOn(prisma.emailVerification, 'update').mockResolvedValue({} as any);
+    jest.spyOn(console, 'error').mockImplementation(() => undefined);
+
+    const res = await request(app).post('/auth/register').send({
+      name: 'New', email: 'new@thapar.edu', password: 'password123', hostelId: 'h1',
+    });
+
+    expect(res.status).toBe(201);
+    expect(res.body.message).toMatch(/couldn't send/);
+    expect(resetCooldown).toHaveBeenCalledWith(expect.objectContaining({ data: { lastSentAt: new Date(0) } }));
+  });
+
   it('rejects an unknown verification token', async () => {
     jest.spyOn(prisma.emailVerification, 'findUnique').mockResolvedValue(null);
     const res = await request(app).get('/auth/verify-email?token=not-a-real-token');
@@ -160,5 +182,32 @@ describe('Email verification', () => {
     expect(res.status).toBe(200);
     expect(res.text).toContain('Email verified');
     expect(tx).toHaveBeenCalled();
+  });
+});
+
+describe('Manual verification by staff', () => {
+  afterEach(() => jest.restoreAllMocks());
+  const { signToken } = require('../src/utils/token');
+  const caretaker = { id: 'c1', role: 'CARETAKER', hostelId: 'h1', passwordHash: 'hash-c1', emailVerified: true };
+
+  it('lets a caretaker verify a student in their hostel', async () => {
+    jest.spyOn(prisma.user, 'findUnique')
+      .mockResolvedValueOnce(caretaker as any) // authenticate
+      .mockResolvedValueOnce({ id: 's1', role: 'STUDENT', hostelId: 'h1', emailVerified: false } as any);
+    const tx = jest.spyOn(prisma, '$transaction').mockResolvedValue([] as any);
+    jest.spyOn(prisma.auditLog, 'create').mockResolvedValue({} as any);
+    const res = await request(app).post('/users/s1/verify-email').set('Authorization', `Bearer ${signToken(caretaker)}`);
+    expect(res.status).toBe(200);
+    expect(tx).toHaveBeenCalled();
+  });
+
+  it("refuses to verify a student from another hostel", async () => {
+    jest.spyOn(prisma.user, 'findUnique')
+      .mockResolvedValueOnce(caretaker as any)
+      .mockResolvedValueOnce({ id: 's2', role: 'STUDENT', hostelId: 'h2', emailVerified: false } as any);
+    const tx = jest.spyOn(prisma, '$transaction');
+    const res = await request(app).post('/users/s2/verify-email').set('Authorization', `Bearer ${signToken(caretaker)}`);
+    expect(res.status).toBe(403);
+    expect(tx).not.toHaveBeenCalled();
   });
 });

@@ -1,28 +1,48 @@
 import { Request, Response, NextFunction } from 'express';
-import jwt from 'jsonwebtoken';
+import prisma from '../db';
+import { verifyToken, passwordFingerprint } from '../utils/token';
+import { isStudentRole } from '../constants/roles';
 
-const JWT_SECRET = process.env.JWT_SECRET;
-if (!JWT_SECRET) {
-  throw new Error('FATAL: JWT_SECRET environment variable is missing.');
-}
-
-export const authenticate = (req: Request, res: Response, next: NextFunction) => {
+/**
+ * Verifies the JWT, then loads the user's CURRENT role and hostel from the
+ * database. The token only proves identity; it is never trusted for
+ * permissions. This means:
+ *  - deleted users are locked out immediately,
+ *  - role / hostel changes take effect on the next request,
+ *  - changing a password invalidates all existing sessions (fingerprint check).
+ */
+export const authenticate = async (req: Request, res: Response, next: NextFunction) => {
   const authHeader = req.headers.authorization;
   if (!authHeader?.startsWith('Bearer ')) {
     return res.status(401).json({ error: 'Unauthorized: Missing or invalid token' });
   }
 
-  const token = authHeader.split(' ')[1];
+  let payload;
   try {
-    const payload = jwt.verify(token, JWT_SECRET) as {
-      userId: string;
-      role: string;
-      hostelId: string | null;
-    };
-    req.user = payload;
-    next();
+    payload = verifyToken(authHeader.slice(7));
   } catch {
     return res.status(401).json({ error: 'Unauthorized: Token expired or invalid' });
+  }
+
+  try {
+    const user = await prisma.user.findUnique({
+      where: { id: payload.userId },
+      select: { id: true, role: true, hostelId: true, passwordHash: true },
+    });
+    if (!user || !payload.pv || payload.pv !== passwordFingerprint(user.passwordHash)) {
+      return res.status(401).json({ error: 'Session expired. Please log in again.' });
+    }
+
+    // Staff roles are always hostel-scoped. A staff account without a hostel
+    // would otherwise slip past every "same hostel" check, so block it.
+    if (user.role !== 'SUPER_ADMIN' && !isStudentRole(user.role) && !user.hostelId) {
+      return res.status(403).json({ error: 'Your account is not assigned to a hostel. Contact your administrator.' });
+    }
+
+    req.user = { userId: user.id, role: user.role, hostelId: user.hostelId };
+    next();
+  } catch (err) {
+    next(err);
   }
 };
 

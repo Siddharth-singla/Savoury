@@ -7,6 +7,33 @@ function normalizeToUTCDate(d: Date): Date {
   return new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate()));
 }
 
+const DAY_MS = 24 * 60 * 60 * 1000;
+const MAX_RANGE_DAYS = 180;
+const MAX_DAYS_AHEAD = 366;
+
+/**
+ * Bounds an opt-out range. Without this, a range like 2026 -> year 275000
+ * makes the per-day loop below run ~10^8 times and freezes the server.
+ */
+function utcToday(): number {
+  const now = new Date();
+  return Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate());
+}
+
+function clampStart(normStart: Date): Date {
+  const earliest = utcToday() - DAY_MS;
+  return normStart.getTime() < earliest ? new Date(earliest) : normStart;
+}
+
+function validateRange(normStart: Date, normEnd: Date): string | null {
+  const today = utcToday();
+  if (normEnd.getTime() > today + MAX_DAYS_AHEAD * DAY_MS) return 'End date can be at most one year ahead.';
+  if ((normEnd.getTime() - normStart.getTime()) / DAY_MS > MAX_RANGE_DAYS) {
+    return `A range can cover at most ${MAX_RANGE_DAYS} days.`;
+  }
+  return null;
+}
+
 function formatDateKey(d: Date): string {
   return d.toISOString().split('T')[0];
 }
@@ -59,12 +86,15 @@ export const setOptOuts = async (req: Request, res: Response, next: NextFunction
     const studentId = req.user!.userId;
     const { startDate, endDate } = setOptOutsSchema.parse(req.body);
 
-    const normStart = normalizeToUTCDate(startDate);
+    // Past days are closed anyway; start no earlier than yesterday so the loop stays small.
+    const normStart = clampStart(normalizeToUTCDate(startDate));
     const normEnd = normalizeToUTCDate(endDate);
 
     if (normEnd < normStart) {
       return res.status(400).json({ error: 'End date must be on or after start date.' });
     }
+    const rangeError = validateRange(normStart, normEnd);
+    if (rangeError) return res.status(400).json({ error: rangeError });
 
     // 1. Fetch meal types and existing bookings for the entire range in 2 queries
     const [mealTypes, existingBookings] = await Promise.all([
@@ -287,12 +317,15 @@ export const removeOptOutRange = async (req: Request, res: Response, next: NextF
     const studentId = req.user!.userId;
     const { startDate, endDate } = removeOptOutRangeSchema.parse(req.body);
 
-    const normStart = normalizeToUTCDate(startDate);
+    // Past days are closed anyway; start no earlier than yesterday so the loop stays small.
+    const normStart = clampStart(normalizeToUTCDate(startDate));
     const normEnd = normalizeToUTCDate(endDate);
 
     if (normEnd < normStart) {
       return res.status(400).json({ error: 'End date must be on or after start date.' });
     }
+    const rangeError = validateRange(normStart, normEnd);
+    if (rangeError) return res.status(400).json({ error: rangeError });
 
     const [mealTypes, existingBookings] = await Promise.all([
       prisma.mealType.findMany(),

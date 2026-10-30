@@ -25,8 +25,8 @@ export const getMyWallet = async (req: Request, res: Response, next: NextFunctio
 };
 
 const getTransactionsSchema = z.object({
-  page: z.string().regex(/^\d+$/).optional().default('1'),
-  limit: z.string().regex(/^\d+$/).optional().default('20'),
+  page: z.string().regex(/^\d{1,6}$/).optional().default('1').refine(v => parseInt(v) >= 1, 'page must be >= 1'),
+  limit: z.string().regex(/^\d{1,3}$/).optional().default('20').refine(v => parseInt(v) >= 1 && parseInt(v) <= 100, 'limit must be 1-100'),
 });
 
 export const getMyTransactions = async (req: Request, res: Response, next: NextFunction) => {
@@ -64,7 +64,7 @@ export const getMyTransactions = async (req: Request, res: Response, next: NextF
 };
 
 const cashoutRequestSchema = z.object({
-  requestedAmount: z.number().positive(),
+  requestedAmount: z.number().positive().max(1_000_000),
 });
 
 export const requestCashout = async (req: Request, res: Response, next: NextFunction) => {
@@ -161,10 +161,10 @@ export const requestCashout = async (req: Request, res: Response, next: NextFunc
 // ---------------------------------------------------------
 
 const topupSchema = z.object({
-  studentId: z.string(),
-  amount: z.number().positive(),
-  semesterLabel: z.string(),
-  note: z.string().optional(),
+  studentId: z.string().min(1).max(50),
+  amount: z.number().positive().max(1_000_000),
+  semesterLabel: z.string().trim().min(1).max(50),
+  note: z.string().max(500).optional(),
 });
 
 export const topupWallet = async (req: Request, res: Response, next: NextFunction) => {
@@ -173,14 +173,14 @@ export const topupWallet = async (req: Request, res: Response, next: NextFunctio
     const { hostelId: wardenHostelId, role } = req.user!;
 
     // Hostel guard: warden can only top-up students from their own hostel
-    if (role !== 'SUPER_ADMIN' && wardenHostelId) {
+    if (role !== 'SUPER_ADMIN') {
       const student = await prisma.user.findUnique({
         where: { id: studentId },
         select: { hostelId: true, role: true },
       });
       if (!student) return res.status(404).json({ error: 'Student not found' });
       if (student.role !== 'STUDENT' && student.role !== 'MESS_COMMITTEE') return res.status(400).json({ error: 'Target user is not a student or mess committee' });
-      if (student.hostelId !== wardenHostelId) {
+      if (!wardenHostelId || student.hostelId !== wardenHostelId) {
         return res.status(403).json({ error: 'You can only top-up wallets of students in your hostel' });
       }
     }
@@ -222,8 +222,8 @@ export const topupWallet = async (req: Request, res: Response, next: NextFunctio
 
 const getCashoutRequestsSchema = z.object({
   status: z.enum(['PENDING', 'APPROVED', 'REJECTED', 'PAID']).optional(),
-  page: z.string().regex(/^\d+$/).optional().default('1'),
-  limit: z.string().regex(/^\d+$/).optional().default('20'),
+  page: z.string().regex(/^\d{1,6}$/).optional().default('1').refine(v => parseInt(v) >= 1, 'page must be >= 1'),
+  limit: z.string().regex(/^\d{1,3}$/).optional().default('20').refine(v => parseInt(v) >= 1 && parseInt(v) <= 100, 'limit must be 1-100'),
 });
 
 export const getCashoutRequests = async (req: Request, res: Response, next: NextFunction) => {
@@ -238,7 +238,7 @@ export const getCashoutRequests = async (req: Request, res: Response, next: Next
     if (status) where.status = status;
 
     // WARDEN_ADMIN can only see cashout requests from their hostel's students
-    if (role !== 'SUPER_ADMIN' && wardenHostelId) {
+    if (role !== 'SUPER_ADMIN') {
       where.student = { hostelId: wardenHostelId };
     }
 
@@ -261,7 +261,7 @@ export const getCashoutRequests = async (req: Request, res: Response, next: Next
 
 const resolveCashoutSchema = z.object({
   status: z.enum(['APPROVED', 'REJECTED']),
-  resolutionNote: z.string().optional(),
+  resolutionNote: z.string().max(500).optional(),
 });
 
 export const resolveCashoutRequest = async (req: Request, res: Response, next: NextFunction) => {
@@ -284,8 +284,8 @@ export const resolveCashoutRequest = async (req: Request, res: Response, next: N
       }
 
       // Hostel guard for warden
-      if (role !== 'SUPER_ADMIN' && wardenHostelId) {
-        if ((cashoutRequest as any).student?.hostelId !== wardenHostelId) {
+      if (role !== 'SUPER_ADMIN') {
+        if (!wardenHostelId || (cashoutRequest as any).student?.hostelId !== wardenHostelId) {
           throw { status: 403, message: 'You can only resolve cashouts for students in your hostel' };
         }
       }

@@ -14,6 +14,10 @@ services:
         sync: false
       - key: JWT_SECRET
         sync: false
+      - key: FRONTEND_URL      # e.g. https://savoury-two.vercel.app (comma-separate several)
+        sync: false
+      - key: SETUP_TOKEN       # only needed to create the first Super Admin; leave unset otherwise
+        sync: false
       - key: PORT
         value: 3000
       - key: NODE_ENV

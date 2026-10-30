@@ -4,13 +4,20 @@ import * as authService from '../services/auth.service';
 import prisma from '../db';
 
 const registerSchema = z.object({
-  name: z.string().min(2),
-  email: z.string().email().endsWith('@thapar.edu', 'College email (@thapar.edu) is required'),
-  password: z.string().min(6),
-  hostelId: z.string().optional(),
-  rollNo: z.string().max(20, 'Roll Number must be at most 20 characters').optional(),
+  name: z.string().trim().min(2).max(100),
+  email: z.string().trim().email().max(254).endsWith('@thapar.edu', 'College email (@thapar.edu) is required'),
+  password: z.string().min(6).max(128),
+  hostelId: z.string().max(50).optional(),
+  rollNo: z.string().trim().max(20, 'Roll Number must be at most 20 characters').regex(/^[A-Za-z0-9-]*$/, 'Roll Number may only contain letters, digits and dashes').optional(),
   phone: z.string().regex(/^\d{10}$/, 'Phone must be exactly 10 digits').optional(),
-  roomNo: z.string().optional(),
+  roomNo: z.string().trim().max(20).optional(),
+});
+
+const setupSchema = z.object({
+  name: z.string().trim().min(2).max(100),
+  email: z.string().trim().email().max(254).endsWith('@thapar.edu', 'College email (@thapar.edu) is required'),
+  password: z.string().min(8).max(128),
+  setupToken: z.string().min(1, 'Setup code is required').max(256),
 });
 
 /**
@@ -34,8 +41,8 @@ export const checkSetupStatus = async (_req: Request, res: Response, next: NextF
  */
 export const setupSuperAdmin = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const { name, email, password } = registerSchema.parse(req.body);
-    const result = await authService.registerSuperAdmin(name, email, password);
+    const { name, email, password, setupToken } = setupSchema.parse(req.body);
+    const result = await authService.registerSuperAdmin(name, email, password, setupToken);
     res.status(201).json(result);
   } catch (err) {
     next(err);
@@ -43,8 +50,8 @@ export const setupSuperAdmin = async (req: Request, res: Response, next: NextFun
 };
 
 const loginSchema = z.object({
-  email: z.string().email().endsWith('@thapar.edu', 'College email (@thapar.edu) is required'),
-  password: z.string().min(1),
+  email: z.string().trim().email().max(254).endsWith('@thapar.edu', 'College email (@thapar.edu) is required'),
+  password: z.string().min(1).max(128),
 });
 
 export const register = async (req: Request, res: Response, next: NextFunction) => {

@@ -1,11 +1,8 @@
+import crypto from 'crypto';
 import bcrypt from 'bcrypt';
-import jwt from 'jsonwebtoken';
+import { Prisma } from '@prisma/client';
 import prisma from '../db';
-
-const JWT_SECRET = process.env.JWT_SECRET;
-if (!JWT_SECRET) {
-  throw new Error('FATAL: JWT_SECRET environment variable is missing.');
-}
+import { signToken } from '../utils/token';
 
 interface RegisterData {
   name: string;
@@ -17,38 +14,54 @@ interface RegisterData {
   roomNo?: string;
 }
 
+const httpError = (status: number, message: string) => {
+  const error = new Error(message);
+  (error as any).status = status;
+  return error;
+};
+
+// Compared against when the email doesn't exist, so a failed login takes the
+// same time whether or not the account exists (prevents email enumeration).
+const DUMMY_HASH = bcrypt.hashSync(crypto.randomBytes(16).toString('hex'), 12);
+
+const safeEqual = (a: string, b: string) => {
+  const ab = Buffer.from(a);
+  const bb = Buffer.from(b);
+  return ab.length === bb.length && crypto.timingSafeEqual(ab, bb);
+};
+
 /**
  * One-time setup: create the first SUPER_ADMIN.
- * Throws 409 if any SUPER_ADMIN already exists.
+ * Requires the SETUP_TOKEN env secret so a stranger can't claim the system
+ * on a fresh or wiped database. Disabled once any SUPER_ADMIN exists.
  */
-export const registerSuperAdmin = async (name: string, email: string, password: string) => {
-  const existingAdmin = await prisma.user.findFirst({ where: { role: 'SUPER_ADMIN' } });
-  if (existingAdmin) {
-    const error = new Error('Initial setup already completed. A Super Admin already exists.');
-    (error as any).status = 409;
-    throw error;
+export const registerSuperAdmin = async (name: string, email: string, password: string, setupToken: string) => {
+  const expected = process.env.SETUP_TOKEN;
+  if (!expected) {
+    throw httpError(403, 'Setup is disabled. Set the SETUP_TOKEN environment variable on the server to enable it.');
   }
-
-  const existingEmail = await prisma.user.findUnique({ where: { email } });
-  if (existingEmail) {
-    const error = new Error('Email already in use');
-    (error as any).status = 409;
-    throw error;
+  if (!safeEqual(setupToken, expected)) {
+    throw httpError(403, 'Invalid setup code.');
   }
 
   const passwordHash = await bcrypt.hash(password, 12);
-  const admin = await prisma.user.create({
-    data: { name, email, passwordHash, role: 'SUPER_ADMIN' },
-  });
 
-  const token = jwt.sign(
-    { userId: admin.id, role: admin.role, hostelId: null },
-    JWT_SECRET,
-    { expiresIn: '7d' }
-  );
+  // Serializable transaction: two simultaneous setup requests can't both
+  // see "no super admin" and create one each.
+  const admin = await prisma.$transaction(async (tx) => {
+    const existingAdmin = await tx.user.findFirst({ where: { role: 'SUPER_ADMIN' } });
+    if (existingAdmin) {
+      throw httpError(409, 'Initial setup already completed. A Super Admin already exists.');
+    }
+    const existingEmail = await tx.user.findUnique({ where: { email } });
+    if (existingEmail) {
+      throw httpError(409, 'Email already in use');
+    }
+    return tx.user.create({ data: { name, email, passwordHash, role: 'SUPER_ADMIN' } });
+  }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable });
 
   return {
-    accessToken: token,
+    accessToken: signToken(admin),
     user: { id: admin.id, name: admin.name, email: admin.email, role: admin.role, hostelId: null },
   };
 };
@@ -57,9 +70,19 @@ export const registerUser = async (data: RegisterData) => {
   const existingUser = await prisma.user.findUnique({ where: { email: data.email } });
 
   if (existingUser) {
-    const error = new Error('Email already in use');
-    (error as any).status = 409;
-    throw error;
+    throw httpError(409, 'Email already in use');
+  }
+
+  if (data.rollNo) {
+    const rollTaken = await prisma.user.findUnique({ where: { rollNo: data.rollNo } });
+    if (rollTaken) {
+      throw httpError(409, 'This roll number is already registered. Contact your warden if this is your roll number.');
+    }
+  }
+
+  if (data.hostelId) {
+    const hostel = await prisma.hostel.findUnique({ where: { id: data.hostelId }, select: { id: true } });
+    if (!hostel) throw httpError(400, 'Selected hostel does not exist');
   }
 
   const hashedPassword = await bcrypt.hash(data.password, 12);
@@ -90,29 +113,15 @@ export const registerUser = async (data: RegisterData) => {
 };
 
 export const loginUser = async (email: string, password: string) => {
-  const user = await prisma.user.findUnique({ 
+  const user = await prisma.user.findUnique({
     where: { email },
     include: { hostel: { select: { name: true } } }
   });
 
-  if (!user) {
-    const error = new Error('Invalid email or password');
-    (error as any).status = 401;
-    throw error;
+  const isMatch = await bcrypt.compare(password, user?.passwordHash ?? DUMMY_HASH);
+  if (!user || !isMatch) {
+    throw httpError(401, 'Invalid email or password');
   }
-
-  const isMatch = await bcrypt.compare(password, user.passwordHash);
-  if (!isMatch) {
-    const error = new Error('Invalid email or password');
-    (error as any).status = 401;
-    throw error;
-  }
-
-  const token = jwt.sign(
-    { userId: user.id, role: user.role, hostelId: user.hostelId },
-    JWT_SECRET,
-    { expiresIn: '7d' }
-  );
 
   const activeWallet = await prisma.walletAccount.findFirst({
     where: { studentId: user.id },
@@ -120,7 +129,7 @@ export const loginUser = async (email: string, password: string) => {
   });
 
   return {
-    accessToken: token,
+    accessToken: signToken(user),
     user: {
       id: user.id,
       name: user.name,

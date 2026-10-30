@@ -10,7 +10,7 @@ export const checkSetupStatus = async (): Promise<{ setupRequired: boolean }> =>
   return res.data;
 };
 
-export const setupSuperAdmin = async (name: string, email: string, password: string) => {
-  const res = await client.post<{ accessToken: string; user: any }>('/auth/setup', { name, email, password });
+export const setupSuperAdmin = async (name: string, email: string, password: string, setupToken: string) => {
+  const res = await client.post<{ accessToken: string; user: any }>('/auth/setup', { name, email, password, setupToken });
   return res.data;
 };

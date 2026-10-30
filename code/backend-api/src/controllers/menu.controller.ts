@@ -14,9 +14,9 @@ const upsertMenuSchema = z.object({
     z.object({
       mealTypeId: z.string().min(1),
       date: z.coerce.date(),
-      items: z.record(z.any()),
+      items: z.record(z.any()).refine(v => JSON.stringify(v).length <= 10_000, 'Menu items are too large'),
     })
-  ),
+  ).max(62, 'Too many menu entries in one request'),
 });
 
 /**

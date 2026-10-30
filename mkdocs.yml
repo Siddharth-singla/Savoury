@@ -26,6 +26,8 @@ theme:
   palette:
     primary: amber
     accent: orange
+  logo: assets/tiet-logo.svg
+  favicon: assets/favicon.png
 
 repo_url: https://github.com/Siddharth-singla/Savoury
 repo_name: Savoury

@@ -20,16 +20,22 @@ This repository follows the UCS503P project template layout:
 
 | Folder | Contents |
 |--------|----------|
-| `project-proposal/` | Project Proposal (LaTeX source `main.tex`, `main.pdf`, PRD) |
+| `project-proposal/` | Project Proposal (`main.tex`, `main.pdf`), SRS (`srs.tex`), PRD, diagram sources |
 | `project-report-prototype-stage/` | Project Report — Prototype Stage |
 | `project-report-final/` | Project Report — Final |
 | `journals/` | Weekly journals, one folder per team member |
 | `docs/` | Documentation (built with `mkdocs`) |
-| `code/` | Source-code root — see [`code/README.md`](code/README.md) |
+| `code/` | All source code — see [`code/README.md`](code/README.md) |
+| `assets/` | Logos, icons, and stylesheets used by the docs site |
 
-The source code lives in top-level component folders referenced from
-`code/` (`backend-api/`, `web/`, `mobile/`), kept in place so the
-existing build and deployment pipelines continue to work.
+All source code is under `code/`:
+
+| Folder | Component |
+|--------|-----------|
+| `code/backend-api/` | Express + TypeScript + Prisma REST API |
+| `code/web/` | Vite + React admin / warden / staff console |
+| `code/mobile/` | Expo / React Native student app |
+| `code/expo-starter/` | Original `create-expo-app` scaffold (reference only) |
 
 ## Reports
 
@@ -67,11 +73,15 @@ pip install mkdocs mkdocs-material mkdocs-material-extensions \
 
 ``` shell
 # Backend API
-cd backend-api && npm install && npx prisma generate && npm run dev
+cd code/backend-api && npm install && npx prisma generate && npm run dev
 
 # Web console
-cd web && npm install && npm run dev
+cd code/web && npm install && npm run dev
 
 # Mobile app
-cd mobile && npm install && npx expo start
+cd code/mobile && npm install && npx expo start
 ```
+
+Or use the wrapper targets: `make -C code install`, then
+`make -C code backend-dev`, `make -C code web-dev`, or
+`make -C code mobile-dev`. See [`code/README.md`](code/README.md).

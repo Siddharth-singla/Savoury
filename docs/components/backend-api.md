@@ -1,6 +1,6 @@
 # Backend API
 
-Express + TypeScript + Prisma REST API in `backend-api/`.
+Express + TypeScript + Prisma REST API in `code/backend-api/`.
 
 ## Scripts (`package.json`)
 

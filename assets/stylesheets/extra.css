@@ -30,6 +30,13 @@ a.autorefs-external:hover::after {
   --md-hue: 36deg;
 }
 
+.tiet-logo {
+  height: 2.9em !important;
+  filter: invert(30%) sepia(26%) saturate(6248%) hue-rotate(345deg) brightness(83%) contrast(84%);
+  margin-right:.5em;
+  float:left;
+}
+
 .htag {
   padding-left: 0.33em;
   color: #bf9003;

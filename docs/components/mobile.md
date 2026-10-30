@@ -1,6 +1,6 @@
 # Mobile App
 
-Expo / React Native student app in `mobile/`.
+Expo / React Native student app in `code/mobile/`.
 
 ## Audience & features
 
@@ -32,7 +32,7 @@ host IP), defaulting to `10.0.2.2:3000` on the Android emulator.
 ## Running
 
 ``` shell
-cd mobile
+cd code/mobile
 npm install
 npx expo start
 ```

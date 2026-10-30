@@ -70,7 +70,12 @@ AGENTS.md
 
 app-example
 
-# generated native folders
-/ios
-/android
+# generated native folders (Expo prebuild)
+/code/expo-starter/ios
+/code/expo-starter/android
+
+# mkdocs build output and Python caches
+/site
+.cache/
+__pycache__/
 

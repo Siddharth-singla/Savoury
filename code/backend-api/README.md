@@ -57,7 +57,7 @@ prisma/
 └── seed.ts           # meal-type seed
 ```
 
-See the full documentation under [`../docs`](../docs/index.md).
+See the full documentation under [`docs/`](../../docs/index.md).
 
 ## Deployment
 

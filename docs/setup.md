@@ -8,7 +8,7 @@
 ## 1. Backend API
 
 ``` shell
-cd backend-api
+cd code/backend-api
 npm install
 cp .env.example .env        # fill in DATABASE_URL, DIRECT_URL, JWT_SECRET
 npx prisma migrate deploy   # apply migrations
@@ -23,7 +23,7 @@ page to create the first `SUPER_ADMIN`.
 ## 2. Web console
 
 ``` shell
-cd web
+cd code/web
 npm install
 # .env: VITE_API_URL=http://localhost:3000
 npm run dev                 # starts on http://localhost:5173
@@ -37,7 +37,7 @@ npm run dev                 # starts on http://localhost:5173
 ## 3. Mobile app
 
 ``` shell
-cd mobile
+cd code/mobile
 npm install
 npx expo start
 ```

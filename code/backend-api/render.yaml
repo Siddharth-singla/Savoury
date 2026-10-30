@@ -4,7 +4,7 @@ services:
     runtime: node
     region: singapore  # closest to India
     plan: free
-    rootDir: backend-api
+    rootDir: code/backend-api
     buildCommand: npm install --include=dev && npx prisma generate && npm run build
     startCommand: npm start
     envVars:

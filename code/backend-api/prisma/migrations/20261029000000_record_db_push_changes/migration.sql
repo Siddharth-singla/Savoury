@@ -1,10 +1,17 @@
 -- Records schema changes that were applied to the database with `prisma db push`
 -- but never captured as a migration (meal opt-outs, system config, fee plan
--- semester end date). Written to be idempotent: on a database that already
+-- semester end date, user avatar/room, per-hostel notices). Written to be idempotent: on a database that already
 -- has these objects it does nothing; on a fresh database it creates them.
 
 -- AlterTable
 ALTER TABLE "hostel_fee_plans" ADD COLUMN IF NOT EXISTS "semesterEndDate" DATE;
+
+-- AlterTable
+ALTER TABLE "users" ADD COLUMN IF NOT EXISTS "avatarBase64" TEXT;
+ALTER TABLE "users" ADD COLUMN IF NOT EXISTS "roomNo" TEXT;
+
+-- AlterTable
+ALTER TABLE "notices" ADD COLUMN IF NOT EXISTS "hostelId" TEXT;
 
 -- CreateTable
 CREATE TABLE IF NOT EXISTS "meal_opt_outs" (
@@ -37,5 +44,13 @@ BEGIN
   IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'meal_opt_outs_studentId_fkey') THEN
     ALTER TABLE "meal_opt_outs" ADD CONSTRAINT "meal_opt_outs_studentId_fkey"
       FOREIGN KEY ("studentId") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+  END IF;
+END $$;
+
+DO $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'notices_hostelId_fkey') THEN
+    ALTER TABLE "notices" ADD CONSTRAINT "notices_hostelId_fkey"
+      FOREIGN KEY ("hostelId") REFERENCES "hostels"("id") ON DELETE CASCADE ON UPDATE CASCADE;
   END IF;
 END $$;

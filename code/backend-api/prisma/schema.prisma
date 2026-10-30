@@ -115,6 +115,9 @@ model User {
   passwordHash String
   role         Role    @default(STUDENT)
 
+  emailVerified     Boolean            @default(false)
+  emailVerification EmailVerification?
+
   hostel   Hostel? @relation(fields: [hostelId], references: [id], onDelete: Cascade)
   hostelId String?
 
@@ -372,4 +375,20 @@ model SystemConfig {
   updatedAt DateTime @updatedAt
 
   @@map("system_config")
+}
+
+// ------------------------------------------------------------
+// EMAIL VERIFICATION — one pending link per user
+// ------------------------------------------------------------
+
+model EmailVerification {
+  id         String   @id @default(cuid())
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId     String   @unique
+  tokenHash  String   @unique // sha256 of the token in the emailed link; the raw token is never stored
+  expiresAt  DateTime
+  lastSentAt DateTime @default(now())
+  createdAt  DateTime @default(now())
+
+  @@map("email_verifications")
 }

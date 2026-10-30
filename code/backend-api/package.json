@@ -4,7 +4,7 @@
   "description": "Savoury backend — Prisma + Supabase",
   "main": "dist/server.js",
   "scripts": {
-    "build": "tsc -p tsconfig.build.json",
+    "build": "tsc -p tsconfig.build.json && node scripts/migrate-on-render.js",
     "start": "node dist/server.js",
     "dev": "ts-node src/server.ts",
     "test": "jest --forceExit",

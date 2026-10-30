@@ -3,6 +3,7 @@ import bcrypt from 'bcrypt';
 import { Prisma } from '@prisma/client';
 import prisma from '../db';
 import { signToken } from '../utils/token';
+import { isVerificationEnabled, sendVerificationEmail } from './verification.service';
 
 interface RegisterData {
   name: string;
@@ -14,9 +15,10 @@ interface RegisterData {
   roomNo?: string;
 }
 
-const httpError = (status: number, message: string) => {
+const httpError = (status: number, message: string, code?: string) => {
   const error = new Error(message);
   (error as any).status = status;
+  if (code) (error as any).code = code;
   return error;
 };
 
@@ -57,7 +59,7 @@ export const registerSuperAdmin = async (name: string, email: string, password: 
     if (existingEmail) {
       throw httpError(409, 'Email already in use');
     }
-    return tx.user.create({ data: { name, email, passwordHash, role: 'SUPER_ADMIN' } });
+    return tx.user.create({ data: { name, email, passwordHash, role: 'SUPER_ADMIN', emailVerified: true } });
   }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable });
 
   return {
@@ -97,10 +99,27 @@ export const registerUser = async (data: RegisterData) => {
       phone: data.phone ?? null,
       roomNo: data.roomNo ?? null,
       role: 'STUDENT',
+      // Until an email provider is configured, accounts are active immediately.
+      emailVerified: !isVerificationEnabled(),
     },
   });
 
+  let verificationRequired = false;
+  if (!newUser.emailVerified) {
+    verificationRequired = true;
+    try {
+      await sendVerificationEmail(newUser);
+    } catch (err) {
+      // The account still exists; logging in re-sends the link.
+      console.error('[verify] failed to send verification email', err);
+    }
+  }
+
   return {
+    verificationRequired,
+    message: verificationRequired
+      ? `Account created. We've sent a verification link to ${newUser.email}. Open it, then log in. Check your spam folder if you don't see it.`
+      : 'Account created.',
     user: {
       id: newUser.id,
       name: newUser.name,
@@ -121,6 +140,20 @@ export const loginUser = async (email: string, password: string) => {
   const isMatch = await bcrypt.compare(password, user?.passwordHash ?? DUMMY_HASH);
   if (!user || !isMatch) {
     throw httpError(401, 'Invalid email or password');
+  }
+
+  // Checked only after the password, so this can't be used to probe emails.
+  if (!user.emailVerified && isVerificationEnabled()) {
+    try {
+      await sendVerificationEmail(user); // no-op if one was sent in the last minute
+    } catch (err) {
+      console.error('[verify] failed to send verification email', err);
+    }
+    throw httpError(
+      403,
+      `Please verify your email first. We've sent a verification link to ${user.email}. Open it, then log in again. Check your spam folder if you don't see it.`,
+      'EMAIL_NOT_VERIFIED'
+    );
   }
 
   const activeWallet = await prisma.walletAccount.findFirst({

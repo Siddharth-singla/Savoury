@@ -88,11 +88,20 @@ export default function RegisterScreen() {
     setLoading(true);
     try {
       console.log('[Register] Sending registration request...');
-      await postRegister({
+      const registered = await postRegister({
         name: name.trim(), email: email.trim(), password, hostelId,
         rollNo: rollNo.trim() || undefined, phone: phone.trim() || undefined,
         roomNo: roomNo.trim() || undefined,
       });
+      if (registered.verificationRequired) {
+        // Account must be activated from the emailed link before logging in.
+        Alert.alert(
+          'Check your email',
+          registered.message ?? `We've sent a verification link to ${email.trim()}. Open it, then log in.`,
+          [{ text: 'Go to login', onPress: () => router.replace('/(auth)/login' as any) }]
+        );
+        return;
+      }
       console.log('[Register] Registration successful, logging in...');
       const result = await postLogin(email.trim(), password);
       console.log('[Register] Login successful, setting auth state...');

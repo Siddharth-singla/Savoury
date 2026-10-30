@@ -45,4 +45,10 @@ export async function sendEmail(to: string, subject: string, html: string, text:
     const body = await res.text().catch(() => '');
     throw new Error(`Brevo send failed: HTTP ${res.status} ${body.slice(0, 300)}`);
   }
+
+  // Brevo accepted it. Whether it reaches the inbox is now up to the
+  // recipient's mail server; look up this ID in Brevo -> Transactional -> Logs.
+  const body = await res.json().catch(() => ({} as any));
+  const domain = to.split('@')[1] ?? '?';
+  console.log(`[mail] Brevo accepted email to *@${domain} from ${fromEmail()}, messageId=${body?.messageId ?? 'n/a'}`);
 }

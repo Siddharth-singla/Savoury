@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useRef } from 'react';
+import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { getMealTypes } from '../api/menu';
 import { getRoster, checkIn } from '../api/attendance';
@@ -61,6 +61,27 @@ function formatStudentId(rollNo: string | null) {
   return rollNo;
 }
 
+/* ─── Offline-first check-in queue ─── */
+// Each item remembers the meal + date it was served for, so switching meal
+// tabs while items are still queued can't send them to the wrong meal.
+type SyncItem = { studentId: string; name: string; mealTypeId: string; date: string; attempts: number };
+type SyncFailure = { studentId: string; name: string; message: string };
+
+const QUEUE_KEY = 'savoury_checkin_queue';
+const MAX_SERVER_ERROR_ATTEMPTS = 5;
+
+function loadQueue(): SyncItem[] {
+  try {
+    const raw = localStorage.getItem(QUEUE_KEY);
+    const parsed = raw ? JSON.parse(raw) : [];
+    return Array.isArray(parsed) ? parsed : [];
+  } catch { return []; }
+}
+
+function saveQueue(q: SyncItem[]) {
+  try { localStorage.setItem(QUEUE_KEY, JSON.stringify(q)); } catch { /* storage full/disabled */ }
+}
+
 export default function CheckInPage() {
   const [mealTypeId, setMealTypeId] = useState('');
   const [search, setSearch] = useState('');
@@ -70,10 +91,9 @@ export default function CheckInPage() {
     timestamp: string;
   }>>([]);
 
-  const [pendingSyncs, setPendingSyncs] = useState<string[]>([]);
-  const pendingSyncsRef = useRef<string[]>([]);
-  const mealTypeIdRef = useRef<string>('');
-  const mealTargetDateRef = useRef<string>('');
+  const [pendingSyncs, setPendingSyncs] = useState<SyncItem[]>(() => loadQueue());
+  const pendingSyncsRef = useRef<SyncItem[]>(pendingSyncs);
+  const [syncFailures, setSyncFailures] = useState<SyncFailure[]>([]);
   const syncTimer = useRef<ReturnType<typeof setInterval> | null>(null);
   const isSyncing = useRef(false);
   const [recentRate, setRecentRate] = useState(0);
@@ -119,10 +139,6 @@ export default function CheckInPage() {
     return new Date(`${year}-${month}-${day}T12:00:00Z`).toISOString();
   }, [mealTypes, mealTypeId]);
 
-  // Keep refs in sync so the stable sync interval can always read latest values
-  useEffect(() => { mealTypeIdRef.current = mealTypeId; }, [mealTypeId]);
-  useEffect(() => { mealTargetDateRef.current = mealTargetDate; }, [mealTargetDate]);
-
   const mealStatus = useMemo(() => {
     if (!mealTypes || !mealTypeId || !mealTargetDate) return { isActive: false, hasEnded: false, hasNotStarted: false };
     const mt = mealTypes.find((m: any) => m.id === mealTypeId);
@@ -147,17 +163,22 @@ export default function CheckInPage() {
 
   useEffect(() => {
     if (serverRoster) {
+      // Students still waiting in the sync queue for THIS meal stay "served" locally
+      const queuedHere = new Set(
+        pendingSyncsRef.current
+          .filter(q => q.mealTypeId === mealTypeId && q.date === mealTargetDate)
+          .map(q => q.studentId)
+      );
       setRoster(prev => {
-        if (prev.length === 0) return serverRoster;
         const prevMap = new Map(prev.map(s => [s.studentId, s]));
         return serverRoster.map(s => {
-          const localS = prevMap.get(s.studentId);
-          if (localS?.isServed) return localS;
+          if (s.isServed) return s;
+          if (queuedHere.has(s.studentId) || prevMap.get(s.studentId)?.isServed) return { ...s, isServed: true };
           return s;
         });
       });
     }
-  }, [serverRoster]);
+  }, [serverRoster]); // eslint-disable-line react-hooks/exhaustive-deps
 
   /* Rate tracker: count check-ins in last 5 minutes */
   useEffect(() => {
@@ -169,38 +190,67 @@ export default function CheckInPage() {
     return () => { if (rateTimer.current) clearInterval(rateTimer.current); };
   }, []);
 
-  /* Sync queue — stable interval, reads latest values from refs to avoid stale closures */
-  useEffect(() => {
-    syncTimer.current = setInterval(async () => {
-      // Read live queue from ref — never stale, never causes interval churn
-      if (pendingSyncsRef.current.length === 0 || isSyncing.current) return;
-      isSyncing.current = true;
-      const studentId = pendingSyncsRef.current[0];
-      try {
-        const res = await checkIn({ studentId, mealTypeId: mealTypeIdRef.current, date: mealTargetDateRef.current });
-        if (res.success) {
-          // Remove from both ref and state atomically
-          pendingSyncsRef.current = pendingSyncsRef.current.slice(1);
-          setPendingSyncs(pendingSyncsRef.current);
+  /* Sync queue */
+  const setQueue = useCallback((q: SyncItem[]) => {
+    pendingSyncsRef.current = q;
+    setPendingSyncs(q);
+    saveQueue(q);
+  }, []);
+
+  // Sends queued check-ins in order. Network errors, timeouts and 429s are
+  // retried indefinitely (server asleep / offline). 5xx is retried a few times.
+  // Any other rejection (no wallet, opted out, wrong hostel, ...) will never
+  // succeed, so the item is dropped, the serve is undone and the reason shown,
+  // instead of blocking the whole queue forever.
+  const flushQueue = useCallback(async () => {
+    if (isSyncing.current) return;
+    isSyncing.current = true;
+    try {
+      while (pendingSyncsRef.current.length > 0) {
+        const item = pendingSyncsRef.current[0];
+        try {
+          await checkIn({ studentId: item.studentId, mealTypeId: item.mealTypeId, date: item.date });
+          setQueue(pendingSyncsRef.current.slice(1));
+        } catch (err: any) {
+          const status: number | undefined = err?.response?.status;
+          const attempts = item.attempts + 1;
+          const transient = !status || status === 408 || status === 429;
+          const serverError = !!status && status >= 500;
+          if (transient || (serverError && attempts < MAX_SERVER_ERROR_ATTEMPTS)) {
+            console.warn(`Check-in sync failed (${status ?? 'network'}), will retry…`);
+            setQueue([{ ...item, attempts }, ...pendingSyncsRef.current.slice(1)]);
+            break; // retry on next tick
+          }
+          const message: string = err?.response?.data?.error ?? err?.message ?? 'Check-in failed';
+          setQueue(pendingSyncsRef.current.slice(1));
+          setRoster(prev => prev.map(s => s.studentId === item.studentId ? { ...s, isServed: false } : s));
+          setCheckedInLog(prev => prev.filter(e => e.student.studentId !== item.studentId));
+          setSyncFailures(prev => [{ studentId: item.studentId, name: item.name, message }, ...prev].slice(0, 5));
         }
-      } catch (err: any) {
-        console.warn('Sync failed, will retry...', err.message);
-      } finally {
-        isSyncing.current = false;
       }
-    }, 2000);
+    } finally {
+      isSyncing.current = false;
+    }
+  }, [setQueue]);
+
+  useEffect(() => {
+    flushQueue(); // resume anything left over from a previous page load
+    syncTimer.current = setInterval(flushQueue, 3000);
     return () => { if (syncTimer.current) clearInterval(syncTimer.current); };
-  }, []); // stable: runs once on mount, uses refs for all live data
+  }, [flushQueue]);
 
   const handleMarkServed = (studentId: string) => {
     const student = roster.find(s => s.studentId === studentId);
-    if (!student || student.isServed) return;
+    if (!student || student.isServed || !mealTypeId || !mealTargetDate) return;
     setRoster(prev => prev.map(s => s.studentId === studentId ? { ...s, isServed: true } : s));
-    // Keep ref and state in sync so the stable interval always sees latest queue
-    if (!pendingSyncsRef.current.includes(studentId)) {
-      pendingSyncsRef.current = [...pendingSyncsRef.current, studentId];
+    const alreadyQueued = pendingSyncsRef.current.some(
+      q => q.studentId === studentId && q.mealTypeId === mealTypeId && q.date === mealTargetDate
+    );
+    if (!alreadyQueued) {
+      setQueue([...pendingSyncsRef.current, { studentId, name: student.name, mealTypeId, date: mealTargetDate, attempts: 0 }]);
     }
-    setPendingSyncs(pendingSyncsRef.current);
+    setSyncFailures(prev => prev.filter(f => f.studentId !== studentId));
+    flushQueue(); // sync immediately instead of waiting for the next tick
     if (student) {
       setCheckedInLog(prev => [{ student, timestamp: new Date().toISOString() }, ...prev].slice(0, 50));
       recentWindow.current.push(Date.now());
@@ -490,6 +540,28 @@ export default function CheckInPage() {
                 </>
               )}
             </div>
+
+            {/* Check-ins rejected by the server (undone locally) */}
+            {syncFailures.map(f => (
+              <div key={f.studentId} style={{
+                display: 'flex', alignItems: 'flex-start', gap: 8,
+                padding: '10px 14px', borderRadius: 12,
+                background: C.dangerDim, border: `1px solid rgba(139,26,26,0.2)`,
+                fontSize: 12, color: C.danger,
+              }}>
+                <div style={{ flex: 1 }}>
+                  <strong>{f.name}</strong> was not checked in: {f.message}
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setSyncFailures(prev => prev.filter(x => x.studentId !== f.studentId))}
+                  style={{ background: 'none', border: 'none', cursor: 'pointer', color: C.danger, padding: 0, display: 'flex' }}
+                  aria-label="Dismiss"
+                >
+                  <X size={14} strokeWidth={2.5} />
+                </button>
+              </div>
+            ))}
           </div>
 
           {/* ── Right Column: Search + Live Log ── */}

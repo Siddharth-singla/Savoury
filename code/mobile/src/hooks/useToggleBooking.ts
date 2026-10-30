@@ -49,7 +49,10 @@ export const useToggleBooking = () => {
           id: `__optimistic_${mealTypeId}_${date.getTime()}`,
           studentId: '',
           mealTypeId,
-          date: date.toISOString(),
+          // Match the server's format (UTC midnight of the local calendar day).
+          // date.toISOString() on local midnight in IST is the previous day 18:30Z,
+          // which made the placeholder show up under the wrong day.
+          date: `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}T00:00:00.000Z`,
           status,
           lockedAt: null,
           mealType: { id: mealTypeId, name: '', servingStart: '', servingEnd: '', cutoffTime: '', perMealRate: 0 },

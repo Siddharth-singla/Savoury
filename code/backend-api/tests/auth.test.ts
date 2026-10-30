@@ -11,7 +11,7 @@ describe('Auth Endpoints', () => {
       jest.spyOn(prisma.user, 'create').mockResolvedValue({
         id: 'new-user-id',
         name: 'Test User',
-        email: 'test@example.com',
+        email: 'test@thapar.edu',
         role: 'STUDENT',
         hostelId: 'hostel-id-1',
         passwordHash: 'hashed-password',
@@ -27,14 +27,14 @@ describe('Auth Endpoints', () => {
         .post('/auth/register')
         .send({
           name: 'Test User',
-          email: 'test@example.com',
+          email: 'test@thapar.edu',
           password: 'password123',
           hostelId: 'cljxyz12345',
         });
 
       expect(res.status).toBe(201);
       expect(res.body.user).toBeDefined();
-      expect(res.body.user.email).toBe('test@example.com');
+      expect(res.body.user.email).toBe('test@thapar.edu');
       expect(res.body.user.role).toBe('STUDENT');
     });
 
@@ -58,7 +58,7 @@ describe('Auth Endpoints', () => {
         .post('/auth/register')
         .send({
           name: 'Test',
-          email: 'valid@email.com',
+          email: 'valid@thapar.edu',
           password: '123',
           hostelId: 'cljxyz12345',
         });
@@ -71,7 +71,7 @@ describe('Auth Endpoints', () => {
       jest.spyOn(prisma.user, 'findUnique').mockResolvedValue({
         id: 'existing-id',
         name: 'Existing',
-        email: 'taken@example.com',
+        email: 'taken@thapar.edu',
         role: 'STUDENT',
         hostelId: 'hostel-id-1',
         passwordHash: 'hashed',
@@ -87,7 +87,7 @@ describe('Auth Endpoints', () => {
         .post('/auth/register')
         .send({
           name: 'Someone',
-          email: 'taken@example.com',
+          email: 'taken@thapar.edu',
           password: 'password123',
           hostelId: 'cljxyz12345',
         });

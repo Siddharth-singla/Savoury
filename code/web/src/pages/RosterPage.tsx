@@ -9,7 +9,11 @@ export default function RosterPage() {
   const queryClient = useQueryClient();
   const [mealTypeId, setMealTypeId] = useState('');
   const [search, setSearch] = useState('');
-  const [date] = useState(new Date().toISOString());
+  // Meals are keyed to the IST calendar day. Computed every render (the 15s
+  // poll re-renders) so an open tab rolls over at IST midnight, and the
+  // 00:00-05:30 IST window no longer resolves to yesterday's UTC date.
+  const istToday = new Date(Date.now() + 5.5 * 60 * 60 * 1000).toISOString().slice(0, 10);
+  const date = `${istToday}T00:00:00.000Z`;
 
   const { data: mealTypes } = useQuery({
     queryKey: ['meal-types'],

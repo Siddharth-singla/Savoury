@@ -17,6 +17,11 @@ import noticeRoutes from './routes/notice.routes';
 
 const app = express();
 
+// Render (and most hosts) sit behind one reverse proxy. Without this, every
+// request appears to come from the proxy's IP, so all users share a single
+// rate-limit bucket and express-rate-limit logs ERR_ERL_UNEXPECTED_X_FORWARDED_FOR.
+app.set('trust proxy', Number(process.env.TRUST_PROXY_HOPS) || 1);
+
 // Global limiter guards against abuse but must not punish normal app usage.
 // A single IP can represent many legitimate clients (e.g. a whole hostel/
 // campus behind one NAT), so the ceiling is generous and env-configurable.

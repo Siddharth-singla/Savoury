@@ -501,7 +501,7 @@ const styles = StyleSheet.create({
   cardImageWrapper: { height: 140, position: 'relative' },
   cardImage:        { width: '100%', height: '100%' },
   cardImageOverlay: {
-    ...StyleSheet.absoluteFillObject,
+    position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
     backgroundColor: 'rgba(29,15,5,0.52)',
   },
   cardImageContent: {

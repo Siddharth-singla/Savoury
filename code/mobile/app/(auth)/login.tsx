@@ -160,8 +160,8 @@ const styles = StyleSheet.create({
 
   /* Hero */
   heroWrap:    { height: 280, position: 'relative' },
-  heroImage:   { ...StyleSheet.absoluteFillObject, width: '100%', height: '100%' },
-  heroOverlay: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(22,10,4,0.55)' },
+  heroImage:   { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, width: '100%', height: '100%' },
+  heroOverlay: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(22,10,4,0.55)' },
   heroContent: { flex: 1, justifyContent: 'flex-end', padding: 28, paddingBottom: 32 },
   logoImage: {
     width: 60, height: 60, marginBottom: 10,

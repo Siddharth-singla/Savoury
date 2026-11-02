@@ -36,13 +36,13 @@
         \vspace{1.5cm}
         \LARGE{Version \myversion}\\
         \vspace{1.5cm}
-        Prepared by : 1. Siddharth Singla (1024170252)\\
+        1. Siddharth Singla (1024170252)\\
         2. Vineet Tripathi (1024170253)\\
         3. Shivansh Sahu (1024170249)\\
-        \vspace{1.5cm}
+        \vspace{1cm}
         Course : UCS503 Software Engineering\\
         Thapar Institute of Engineering \& Technology, Patiala\\
-        \vspace{1.5cm}
+        \vspace{1cm}
         \today\\
     \end{bfseries}
 \end{flushright}
@@ -194,7 +194,7 @@ refunds.
 \begin{figure}[h!]
     \centering
     \includegraphics[width=\textwidth]{dfd.png}
-    \caption{Data Flow Diagram}
+    \caption{Entity Relation Diagram}
     \label{fig:dfd}
 \end{figure}
 
@@ -280,141 +280,141 @@ students with extra privileges.
 
 \subsection{Authentication and Accounts}
 \begin{itemize}
-  \item FR-1: The system shall create the first Super Admin through a
-  one-time setup endpoint, and reject further setup attempts with HTTP 409
-  once a Super Admin exists.
-  \item FR-2: A student shall self-register with a name, an
-  \texttt{@thapar.edu} email, a password of at least 6 characters, and an
-  optional hostel, roll number, room number and 10-digit phone number.
-  Self-registration shall only ever create Student accounts.
-  \item FR-3: Login shall issue a signed JWT, valid for 7 days, that
-  carries the user's id, role and hostel.
-  \item FR-4: Every endpoint except setup, registration, login and the
-  health check shall require a valid token. The acting user's identity
-  shall come only from the token, never from the request body.
-  \item FR-5: Warden, Co-Warden, Caretaker and Mess Staff accounts shall be
-  created by administrators, so staff never register through the mobile app.
+    \item FR-1: The system shall create the first Super Admin through a
+    one-time setup endpoint, and reject further setup attempts with HTTP 409
+    once a Super Admin exists.
+    \item FR-2: A student shall self-register with a name, an
+    \texttt{@thapar.edu} email, a password of at least 6 characters, and an
+    optional hostel, roll number, room number and 10-digit phone number.
+    Self-registration shall only ever create Student accounts.
+    \item FR-3: Login shall issue a signed JWT, valid for 7 days, that
+    carries the user's id, role and hostel.
+    \item FR-4: Every endpoint except setup, registration, login and the
+    health check shall require a valid token. The acting user's identity
+    shall come only from the token, never from the request body.
+    \item FR-5: Warden, Co-Warden, Caretaker and Mess Staff accounts shall be
+    created by administrators, so staff never register through the mobile app.
 \end{itemize}
 
 \subsection{Hostels and Role Management}
 \begin{itemize}
-  \item FR-6: The Super Admin shall create, rename and delete hostels.
-  Creating a hostel shall also create its mess.
-  \item FR-7: The Super Admin shall set a fee plan per hostel and semester,
-  with a total fee and an optional semester end date.
-  \item FR-8: The Super Admin shall create users of any role. Each hostel
-  shall have at most one Warden and one Co-Warden; creating a second shall
-  be rejected with HTTP 409. Caretakers and Mess Staff are unlimited.
-  \item FR-9: A Warden or Co-Warden shall create Mess Staff accounts for
-  their own hostel only. A Caretaker shall not create any account.
-  \item FR-10: A hostel admin shall not edit, change the role of, or delete
-  a Warden, Co-Warden, Caretaker or Super Admin; only the Super Admin can.
-  \item FR-11: A hostel admin shall only switch a student between Student
-  and Mess Committee. A Mess Staff account's role shall not be changed by
-  anyone (HTTP 403).
-  \item FR-12: A user shall not delete their own account (HTTP 400).
-  \item FR-13: Every user other than the Super Admin shall see and act on
-  data of their own hostel only.
+    \item FR-6: The Super Admin shall create, rename and delete hostels.
+    Creating a hostel shall also create its mess.
+    \item FR-7: The Super Admin shall set a fee plan per hostel and semester,
+    with a total fee and an optional semester end date.
+    \item FR-8: The Super Admin shall create users of any role. Each hostel
+    shall have at most one Warden and one Co-Warden; creating a second shall
+    be rejected with HTTP 409. Caretakers and Mess Staff are unlimited.
+    \item FR-9: A Warden or Co-Warden shall create Mess Staff accounts for
+    their own hostel only. A Caretaker shall not create any account.
+    \item FR-10: A hostel admin shall not edit, change the role of, or delete
+    a Warden, Co-Warden, Caretaker or Super Admin; only the Super Admin can.
+    \item FR-11: A hostel admin shall only switch a student between Student
+    and Mess Committee. A Mess Staff account's role shall not be changed by
+    anyone (HTTP 403).
+    \item FR-12: A user shall not delete their own account (HTTP 400).
+    \item FR-13: Every user other than the Super Admin shall see and act on
+    data of their own hostel only.
 \end{itemize}
 
 \subsection{Meal Booking and Opt-out}
 \begin{itemize}
-  \item FR-14: A student shall be treated as eating every meal unless they
-  have opted out (implicit opt-in); no booking row is needed for this
-  default.
-  \item FR-15: A student shall opt in to or out of a single meal on a given
-  date. There shall be at most one booking per student, meal and date.
-  \item FR-16: Each meal's cutoff shall be computed from its configured IST
-  cutoff time. If the cutoff time is later than the meal's serving start,
-  the cutoff falls on the previous day.
-  \item FR-17: Changing a booking after its cutoff, or after it has been
-  locked, shall be rejected with HTTP 400.
-  \item FR-18: A student shall opt out of whole days across a date range in
-  one request. Meals already past their cutoff shall be skipped, and the
-  response shall report how many were skipped.
-  \item FR-19: A student shall cancel an opt-out for one date or a date
-  range, which reopens only the meals still before their cutoff.
-  \item FR-20: An hourly job shall mark open \texttt{OPTED\_IN} bookings
-  as \texttt{LOCKED} once their cutoff has passed.
+    \item FR-14: A student shall be treated as eating every meal unless they
+    have opted out (implicit opt-in); no booking row is needed for this
+    default.
+    \item FR-15: A student shall opt in to or out of a single meal on a given
+    date. There shall be at most one booking per student, meal and date.
+    \item FR-16: Each meal's cutoff shall be computed from its configured IST
+    cutoff time. If the cutoff time is later than the meal's serving start,
+    the cutoff falls on the previous day.
+    \item FR-17: Changing a booking after its cutoff, or after it has been
+    locked, shall be rejected with HTTP 400.
+    \item FR-18: A student shall opt out of whole days across a date range in
+    one request. Meals already past their cutoff shall be skipped, and the
+    response shall report how many were skipped.
+    \item FR-19: A student shall cancel an opt-out for one date or a date
+    range, which reopens only the meals still before their cutoff.
+    \item FR-20: An hourly job shall mark open \texttt{OPTED\_IN} bookings
+    as \texttt{LOCKED} once their cutoff has passed.
 \end{itemize}
 
 \subsection{Counter Attendance and Billing}
 \begin{itemize}
-  \item FR-21: Mess Staff, Mess Committee members and hostel admins shall
-  load the hostel roster for a meal and date, showing each student's
-  booking status and whether they have been served.
-  \item FR-22: Marking a student served shall, in one transaction, record a
-  \texttt{SERVED} attendance, deduct the meal's per-meal rate from the
-  student's wallet, and write a \texttt{MEAL\_DEDUCTION} transaction.
-  \item FR-23: A student who opted out of the meal shall not be marked
-  served (HTTP 400).
-  \item FR-24: Serving the same booking a second time shall record and
-  charge nothing; the response shall report the result \texttt{DUPLICATE}.
-  \item FR-25: Mess Committee members and hostel admins shall record an
-  override for a walk-in, which requires a non-empty reason and is billed
-  like a normal serve. Mess Staff shall not record overrides.
-  \item FR-26: Staff shall serve or override only students of their own
-  hostel (HTTP 403).
-  \item FR-27: If the student has no wallet account, serving shall fail and
-  the transaction shall record nothing.
+    \item FR-21: Mess Staff, Mess Committee members and hostel admins shall
+    load the hostel roster for a meal and date, showing each student's
+    booking status and whether they have been served.
+    \item FR-22: Marking a student served shall, in one transaction, record a
+    \texttt{SERVED} attendance, deduct the meal's per-meal rate from the
+    student's wallet, and write a \texttt{MEAL\_DEDUCTION} transaction.
+    \item FR-23: A student who opted out of the meal shall not be marked
+    served (HTTP 400).
+    \item FR-24: Serving the same booking a second time shall record and
+    charge nothing; the response shall report the result \texttt{DUPLICATE}.
+    \item FR-25: Mess Committee members and hostel admins shall record an
+    override for a walk-in, which requires a non-empty reason and is billed
+    like a normal serve. Mess Staff shall not record overrides.
+    \item FR-26: Staff shall serve or override only students of their own
+    hostel (HTTP 403).
+    \item FR-27: If the student has no wallet account, serving shall fail and
+    the transaction shall record nothing.
 \end{itemize}
 
 \subsection{Headcount}
 \begin{itemize}
-  \item FR-28: For a given date, the system shall report for each meal the
-  total students, the opted-out count, the expected count (total minus
-  opted out), the served count (\texttt{SERVED} plus \texttt{OVERRIDE})
-  and the cutoff time, plus the total served across all meals.
-  \item FR-29: The headcount dashboard shall show each meal as Upcoming,
-  Final (cutoff passed), Active (being served now) or Over (serving ended),
-  computed in IST, and shall refresh every 5 seconds.
-  \item FR-30: Each meal's served percentage shall be served divided by
-  expected, capped at 100\%, and shall be 0\% when no students are expected.
+    \item FR-28: For a given date, the system shall report for each meal the
+    total students, the opted-out count, the expected count (total minus
+    opted out), the served count (\texttt{SERVED} plus \texttt{OVERRIDE})
+    and the cutoff time, plus the total served across all meals.
+    \item FR-29: The headcount dashboard shall show each meal as Upcoming,
+    Final (cutoff passed), Active (being served now) or Over (serving ended),
+    computed in IST, and shall refresh every 5 seconds.
+    \item FR-30: Each meal's served percentage shall be served divided by
+    expected, capped at 100\%, and shall be 0\% when no students are expected.
 \end{itemize}
 
 \subsection{Wallet and Cashout}
 \begin{itemize}
-  \item FR-31: A student shall view their wallet balance and a paginated
-  transaction history.
-  \item FR-32: A hostel admin shall top up the wallet of a student in their
-  own hostel for a given semester. A missing wallet shall be created, and
-  a \texttt{TOPUP} transaction recorded.
-  \item FR-33: A student shall request a cashout only from the day after
-  the semester ends (HTTP 403 before that). The end date shall come from
-  the hostel's fee plan, else the global setting, else 31 May or
-  31 December.
-  \item FR-34: A cashout request larger than the wallet balance shall be
-  rejected (HTTP 400).
-  \item FR-35: A hostel admin shall approve or reject a pending cashout
-  request from their own hostel. Approval shall re-check the balance,
-  deduct the amount and record a \texttt{CASHOUT} transaction. A request
-  that is already resolved shall not be resolved again (HTTP 400).
-  \item FR-36: The Super Admin shall set the global semester end date, and
-  any signed-in user shall be able to read it.
+    \item FR-31: A student shall view their wallet balance and a paginated
+    transaction history.
+    \item FR-32: A hostel admin shall top up the wallet of a student in their
+    own hostel for a given semester. A missing wallet shall be created, and
+    a \texttt{TOPUP} transaction recorded.
+    \item FR-33: A student shall request a cashout only from the day after
+    the semester ends (HTTP 403 before that). The end date shall come from
+    the hostel's fee plan, else the global setting, else 31 May or
+    31 December.
+    \item FR-34: A cashout request larger than the wallet balance shall be
+    rejected (HTTP 400).
+    \item FR-35: A hostel admin shall approve or reject a pending cashout
+    request from their own hostel. Approval shall re-check the balance,
+    deduct the amount and record a \texttt{CASHOUT} transaction. A request
+    that is already resolved shall not be resolved again (HTTP 400).
+    \item FR-36: The Super Admin shall set the global semester end date, and
+    any signed-in user shall be able to read it.
 \end{itemize}
 
 \subsection{Menu and Notices}
 \begin{itemize}
-  \item FR-37: Every user shall view the menu of their hostel's mess for a
-  date range. The Super Admin shall choose which hostel to view.
-  \item FR-38: Mess Committee members and hostel admins shall create and
-  update menu items, with at most one menu per mess, meal and date.
-  \item FR-39: Mess Committee members and hostel admins shall post notices
-  to their hostel, optionally targeted at one role.
-  \item FR-40: A user shall see notices that are global or for their
-  hostel, and either untargeted or targeted at their role. Hostel admins
-  and the Super Admin shall see notices for every role.
-  \item FR-41: A Mess Committee member shall delete only their own
-  notices; hostel admins and the Super Admin shall delete any notice.
-  \item FR-42: The mobile app shall detect new notices by polling the
-  timestamp of the latest notice it can see.
+    \item FR-37: Every user shall view the menu of their hostel's mess for a
+    date range. The Super Admin shall choose which hostel to view.
+    \item FR-38: Mess Committee members and hostel admins shall create and
+    update menu items, with at most one menu per mess, meal and date.
+    \item FR-39: Mess Committee members and hostel admins shall post notices
+    to their hostel, optionally targeted at one role.
+    \item FR-40: A user shall see notices that are global or for their
+    hostel, and either untargeted or targeted at their role. Hostel admins
+    and the Super Admin shall see notices for every role.
+    \item FR-41: A Mess Committee member shall delete only their own
+    notices; hostel admins and the Super Admin shall delete any notice.
+    \item FR-42: The mobile app shall detect new notices by polling the
+    timestamp of the latest notice it can see.
 \end{itemize}
 
 \subsection{Measurement}
 \begin{itemize}
-  \item FR-43: Expected versus served counts, and therefore attendance and
-  food-wastage rates, shall be computable from stored data. For example,
-  the number of students served per meal on a date:
+    \item FR-43: Expected versus served counts, and therefore attendance and
+    food-wastage rates, shall be computable from stored data. For example,
+    the number of students served per meal on a date:
 \end{itemize}
 
 \begin{lstlisting}[language=SQL, basicstyle=\ttfamily\small]
@@ -428,13 +428,14 @@ GROUP BY b."mealTypeId";
 
 \subsection{Guest Meals, Feedback and Audit Log (Deferred)}
 \begin{itemize}
-  \item FR-44: A student shall book a meal for a named guest, charged at
-  the meal's rate.
-  \item FR-45: A student shall rate a meal's menu from 1 to 5, once per
-  menu, with an optional comment.
-  \item FR-46: Overrides, role changes and other manual actions shall be
-  written to an audit log with the actor, the old value and the new value.
+    \item FR-44: A student shall book a meal for a named guest, charged at
+    the meal's rate.
+    \item FR-45: A student shall rate a meal's menu from 1 to 5, once per
+    menu, with an optional comment.
+    \item FR-46: Overrides, role changes and other manual actions shall be
+    written to an audit log with the actor, the old value and the new value.
 \end{itemize}
+
 These are out of scope for version 1.0. Their tables already exist in
 the schema, but no endpoints use them yet.
 
@@ -453,24 +454,24 @@ Query (student app).
 \textbf{Database} : PostgreSQL (Supabase).
 
 \medskip
+
 Representative API capabilities (REST):
 
 \begin{longtable}{>{\raggedright\arraybackslash}p{4cm} p{9.5cm}}
-\textbf{Area} & \textbf{Functions} \\ \hline
-\endhead
-Auth & First-admin setup, student registration (college email), login (JWT). \\
-Users & Create/update/delete users, change roles, per-hostel scoping and caps. \\
-Hostels & Create hostels and fee plans (Super Admin). \\
-Menu & View menus (all); create/update menus (committee, hostel admins). \\
-Bookings & List bookings, toggle opt-in/out, per-meal headcount. \\
-Opt-outs & Batch day-level opt-out / opt-in across date ranges. \\
-Attendance & Roster, mark-served / check-in, override (with reason). \\
-Wallet & View wallet/transactions, top-up, cashout request/resolve. \\
-Notices & List / create / delete hostel-scoped notices. \\
-Config & Read / set the semester-end date. \\
+    \textbf{Area} & \textbf{Functions} \\ \hline
+    \endhead
+    Auth & First-admin setup, student registration (college email), login (JWT). \\
+    Users & Create/update/delete users, change roles, per-hostel scoping and caps. \\
+    Hostels & Create hostels and fee plans (Super Admin). \\
+    Menu & View menus (all); create/update menus (committee, hostel admins). \\
+    Bookings & List bookings, toggle opt-in/out, per-meal headcount. \\
+    Opt-outs & Batch day-level opt-out / opt-in across date ranges. \\
+    Attendance & Roster, mark-served / check-in, override (with reason). \\
+    Wallet & View wallet/transactions, top-up, cashout request/resolve. \\
+    Notices & List / create / delete hostel-scoped notices. \\
+    Config & Read / set the semester-end date. \\
 \end{longtable}
-
-% ============================================================
+%============================================================
 \chapter{Other Nonfunctional Requirements}
 
 \section{Performance Requirements}

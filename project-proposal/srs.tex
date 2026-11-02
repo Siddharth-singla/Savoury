@@ -248,6 +248,29 @@ the counter.
     \label{fig:staff}
 \end{figure}
 
+\subsection{Data Flow Diagram}
+Figure~\ref{fig:dfd-level1} shows how data moves through Savoury. Students,
+mess staff and the warden are the external entities. The three processes
+are planning meals (1.0), serving meals (2.0) and managing wallets (3.0),
+and the data is kept in three stores: menus and bookings (D1), meal
+records (D2) and wallets (D3).
+
+% DFD image: export project-proposal/diagrams/dfd-level1.mmd from
+% https://mermaid.live as PNG and upload it as dfd-level1.png.
+% Until the file exists, a placeholder box is shown instead.
+\begin{figure}[!htbp]
+    \centering
+    \IfFileExists{dfd-level1.png}{%
+        \includegraphics[width=\linewidth,height=0.7\textheight,keepaspectratio]{dfd-level1.png}%
+    }{%
+        \fbox{\parbox[c][8cm][c]{0.85\linewidth}{\centering
+            \textbf{Data Flow Diagram placeholder}\\[0.5em]
+            Upload \texttt{dfd-level1.png} to show the diagram here.}}%
+    }
+    \caption{Level-1 data flow diagram}
+    \label{fig:dfd-level1}
+\end{figure}
+
 % ============================================================
 \chapter{System Features}
 Savoury is a per-meal booking, attendance, and wallet-billing system.

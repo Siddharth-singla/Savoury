@@ -1,0 +1,45 @@
+%%{init: {"flowchart": {"curve": "basis", "nodeSpacing": 25, "rankSpacing": 30}}}%%
+flowchart TB
+
+    %% External entities
+    STU["Student"]
+    STAFF["Mess Staff"]
+    WAR["Warden"]
+
+    %% System processes
+    P1(("1.0<br/>Plan Meals"))
+    P2(("2.0<br/>Serve Meals"))
+    P3(("3.0<br/>Manage Wallet"))
+
+    %% Data stores
+    D1["D1<br/>Menus & Bookings"]
+    D2["D2<br/>Meal Records"]
+    D3["D3<br/>Wallets"]
+
+    %% 1.0 Plan Meals
+    WAR -->|"sets the menu"| P1
+    STU -->|"skips meals before cutoff"| P1
+    P1 -->|"today's menu"| STU
+    P1 -->|"who is eating"| D1
+
+    %% 2.0 Serve Meals
+    D1 -->|"who is expected"| P2
+    STAFF -->|"marks student served"| P2
+    P2 -->|"meal served"| D2
+    P2 -->|"meal charge"| D3
+    P2 -->|"how many ate"| WAR
+
+    %% 3.0 Manage Wallet
+    WAR -->|"adds money, approves refunds"| P3
+    STU -->|"asks for refund"| P3
+    P3 <-->|"balance"| D3
+    P3 -->|"balance and history"| STU
+
+    %% Styling
+    classDef person fill:#f2f2f2,stroke:#333;
+    classDef process fill:#e6e6fa,stroke:#333;
+    classDef store fill:#ffffff,stroke:#333;
+
+    class STU,STAFF,WAR person;
+    class P1,P2,P3 process;
+    class D1,D2,D3 store;

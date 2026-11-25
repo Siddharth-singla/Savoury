@@ -1884,32 +1884,6 @@ with ``Top Up'' and ``Meal Deduction'' entries.}
 \label{fig:ss-mobile}
 \end{figure}
 
-\subsubsection{Code and Output}
-
-\begin{figure}[H]
-\centering
-\shot{screenshots/code-markserved.png}{8.5cm}{Editor screenshot of
-\texttt{markServed} in
-\texttt{code/backend-api/src/services/attendance.service.ts}: the booking
-upsert, the \texttt{OPTED\_OUT} check, and the \texttt{prisma.\$transaction}
-block with \texttt{attendance.create}, the conditional
-\texttt{walletAccount.updateMany(\{ where: \{ balance: \{ gte: rate \} \} \})},
-the \texttt{MEAL\_DEDUCTION} insert and the \texttt{P2002} handler.}
-\caption{Code: atomic serve-and-bill transaction}
-\label{fig:ss-code-serve}
-\end{figure}
-
-\begin{figure}[H]
-\centering
-\shot{screenshots/out-jest.png}{7.5cm}{Terminal output of \texttt{npm test} in
-\texttt{code/backend-api} with \texttt{--verbose}: the four suites
-\texttt{cutoff.test.ts}, \texttt{security.test.ts}, \texttt{auth.test.ts} and
-\texttt{balance-verification.test.ts} marked PASS, the individual test names,
-and the summary ``Tests: 30 passed, 30 total''.}
-\caption{Output: backend Jest test run}
-\label{fig:ss-out-jest}
-\end{figure}
-
 % ============================================================
 \clearpage
 \section{Testing}\label{sec:testing}

@@ -154,7 +154,8 @@ Cutoff-Driven Booking and Wallet-Based Billing\par}
 (1024170252) Siddharth Singla\\
 (1024170253) Vineet Tripathi\\
 (1024170249) Shivansh Sahu\\[1em]
-BE Third Year, COE
+% TODO: replace with your year and branch
+[Year, Branch]
 \end{minipage}\hfill
 \begin{minipage}[t]{0.38\textwidth}
 \raggedleft
@@ -164,9 +165,9 @@ BE Third Year, COE
 \end{minipage}
 
 \vfill
-{\large Computer Science and Engineering Department\par}
+{\large UCS503 Software Engineering\par}
 \vspace{0.4em}
-{\large TIET, Patiala\par}
+{\large Thapar Institute of Engineering \& Technology, Patiala\par}
 \vspace{0.4em}
 {\large November 2026\par}
 \end{titlepage}
@@ -200,7 +201,7 @@ and spreadsheets, which makes reconciliation slow and disputes common. Wardens
 have no live picture of how many students will eat a given meal, and students
 have no transparent record of what they were charged and why.
 
-\textbf{Proposed solution.} Our team bids to build Savoury, a client--server
+\textbf{Proposed solution.} We propose Savoury, a client--server
 platform made of one shared REST backend, a mobile app for students and a web
 console for hostel staff. Every student is assumed to eat every meal
 (\emph{implicit opt-in}) and opts out of the meals they will miss before a
@@ -221,12 +222,12 @@ counter check-in with duplicate and opt-out protection, walk-in overrides,
 the live headcount dashboard, the wallet ledger with top-ups, deductions and
 cashouts, hostel-scoped menus and notices. Guest meals, meal feedback and the
 audit log are modelled in the database but are deferred to a later release.
-Online payment collection is outside the scope; top-ups are recorded by the
-warden after payment is received through the institute's existing channel.
+The system does not take payments itself: wallet balances change only through
+top-ups recorded by a hostel admin, meal deductions and approved cashouts.
 
-\textbf{Team and responsibilities.} The work was divided by subsystem so that
-each member owned a complete vertical slice. Table~\ref{tab:team} lists the
-allocation.
+\textbf{Team and responsibilities.} The code base has three parts (backend API,
+web console, mobile app), and Table~\ref{tab:team} lists the member responsible
+for each.
 
 % TODO: confirm the module ownership below with the team before submission.
 \begin{table}[H]
@@ -250,8 +251,8 @@ notices and profile; design of the manual test cases.\\
 \end{tabular}
 \end{table}
 
-\textbf{Technical feasibility.} Every building block is mature and free to use.
-Express with TypeScript gives a typed REST service, Prisma provides schema
+\textbf{Technical feasibility.} The proposal deliberately avoids research
+algorithms and builds on established tooling. Express with TypeScript gives a typed REST service, Prisma provides schema
 migrations, typed queries and interactive transactions over PostgreSQL, and Zod
 validates every request body. React with Vite and TanStack Query is a fast
 basis for the staff console, and Expo lets one TypeScript code base produce the
@@ -259,22 +260,22 @@ Android and iOS student app. The only hard problems are business rules
 (cutoffs in IST, implicit opt-in, transactional billing, hostel scoping), not
 algorithms, so the risk sits in correctness rather than in research.
 
-\textbf{Economic feasibility.} All libraries are open source. The backend runs
-on the free plan of Render, the web console on Vercel, the database on the free
-tier of Supabase and verification e-mail on the free tier of Brevo. Verification
-is optional: with no Brevo key configured, accounts are usable immediately. The
-project can therefore be developed, demonstrated and piloted at zero recurring
-cost; the investment is the development time of three students across the
-semester.
+\textbf{Economic feasibility.} The dependencies listed in the
+\texttt{package.json} files are open-source packages. The Render service is
+declared on the \texttt{free} plan in \texttt{render.yaml}, the web console is
+deployed on Vercel and the database is hosted on Supabase. E-mail verification
+through Brevo is optional: when \texttt{BREVO\_API\_KEY} is not set,
+verification is switched off and accounts are usable immediately.
 
-\textbf{Operational feasibility.} Students already carry Android or iOS phones
-and the mess counter already has a computer or tablet with a browser. The
-student flow has one decision per meal (eat or skip), and the counter flow has
+\textbf{Operational feasibility.} The proposal requires the system to be
+usable on low-to-mid range devices and deployable on common web hosting with a
+managed database. Students use the Android or iOS app and staff use any modern
+browser. The student flow has one decision per meal (eat or skip), and the counter flow has
 one action per student (search and serve). Times are always shown in IST, so
 nobody needs to convert time zones.
 
-\textbf{Development plan.} Table~\ref{tab:phases} summarises the phases the
-team followed during the semester.
+\textbf{Development plan.} Table~\ref{tab:phases} summarises the phases, as
+reflected in the repository's documents and commit history.
 
 \begin{table}[H]
 \centering
@@ -285,9 +286,9 @@ team followed during the semester.
 \textbf{Phase} & \textbf{Deliverable}\\
 \midrule
 Selection and analysis & Product requirements document, project proposal,
-SRS with numbered functional requirements, user stories.\\
-Design & Data model (Prisma schema), role matrix, REST API areas, UML and DFD
-diagrams.\\
+SRS with numbered functional requirements.\\
+Design & Data model (Prisma schema), role matrix, REST API areas, workflow,
+activity and Level-1 data flow diagrams.\\
 Implementation 1 & Authentication, hostels and users, meal types, menus,
 bookings and the IST cutoff rule.\\
 Implementation 2 & Counter check-in, attendance with wallet deduction, headcount
@@ -348,9 +349,8 @@ Money moves in exactly one place. When a student is served, the attendance
 service creates the attendance row, checks that the wallet balance covers the
 meal rate, decrements the balance and writes a \texttt{MEAL\_DEDUCTION} ledger
 entry, all inside one Prisma transaction. If any step fails, none of them is
-kept. Throughout the design the system follows two principles: a student who is
-not served is never charged, and no user can see or change another hostel's
-data.
+kept. As a result, a student is charged only when an attendance record is
+written, and every staff action is checked against the acting user's hostel.
 
 % ============================================================
 \clearpage
@@ -433,10 +433,9 @@ actor also authenticates through Log In on the web console.}
 
 \subsubsection{Use Case Templates}
 
-The following templates describe the most significant use cases in the
-structured format used in the course. Each template lists the actors, the
-conditions that must hold before and after the use case, the normal sequence of
-events and the alternative paths.
+Tables~\ref{tab:uc1} to~\ref{tab:uc6} detail the six use cases that carry the
+core business rules of Savoury: registration, single-meal opt-out, date-range
+absence, counter service, wallet top-up and cashout.
 
 \begin{table}[H]
 \centering
@@ -466,7 +465,7 @@ Brevo rejects the request, the account is kept and the student is told that the
 e-mail could not be sent; logging in again re-sends it, or a hostel admin can
 verify the account manually.\\
 \textbf{Post-conditions} & A Student account exists in the chosen hostel.\\
-\textbf{Frequency} & Once per student.\\
+\textbf{Frequency} & Once per student (the e-mail is unique).\\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -496,7 +495,7 @@ the card shows ``Closed''. Tapping again before the cutoff opts the student back
 in.\\
 \textbf{Post-conditions} & Exactly one booking exists for the student, meal and
 date, and the headcount for that meal drops by one.\\
-\textbf{Frequency} & Several times a week per student.\\
+\textbf{Frequency} & At most one booking per student, meal and date; it can be toggled until the cutoff.\\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -524,7 +523,7 @@ closed, the request is refused. ``Re-Opt In'' on a scheduled day removes that
 absence and reopens only the meals still before their cutoff.\\
 \textbf{Post-conditions} & The absences are listed under ``Your Scheduled
 Absences'' and the headcount of the affected meals is reduced.\\
-\textbf{Frequency} & A few times per semester.\\
+\textbf{Frequency} & Whenever a student plans an absence; one request covers up to 180 days.\\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -560,7 +559,7 @@ nothing and returns the result \texttt{DUPLICATE}. Without a network the page
 queues the serve and replays it later.\\
 \textbf{Post-conditions} & One attendance record and one deduction exist for the
 booking.\\
-\textbf{Frequency} & Hundreds of times per meal.\\
+\textbf{Frequency} & Once per student per meal served.\\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -588,8 +587,7 @@ The button stays disabled for an amount of zero. A target that is not a student
 is refused with HTTP 400.\\
 \textbf{Post-conditions} & The student sees the new balance and a ``Top Up''
 entry on the mobile app.\\
-\textbf{Frequency} & At the start of the semester and whenever a balance runs
-low.\\
+\textbf{Frequency} & Whenever a student's wallet needs funds.\\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -619,7 +617,7 @@ An amount above the balance is refused with HTTP 400. The admin may reject the
 request instead. Resolving an already resolved request returns HTTP 400.\\
 \textbf{Post-conditions} & The balance is zero (or reduced) and the ledger
 records the cashout with the resolving admin.\\
-\textbf{Frequency} & Once per student per semester.\\
+\textbf{Frequency} & After the semester end date, per wallet.\\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -908,8 +906,7 @@ three.
 
 \subsection{Software Requirement Specification in IEEE Format}
 
-This section follows the structure of IEEE Std 830 for software requirements
-specifications. The full SRS is maintained in the repository as
+The requirements below are organised under the IEEE Std 830 headings. The full SRS is maintained in the repository as
 \texttt{project-proposal/srs.tex}; the requirement numbers below are the same,
 so the test cases in Section~\ref{sec:testing} trace directly to them.
 
@@ -961,20 +958,22 @@ administers hostels and users, plans meals through bookings and opt-outs,
 serves and bills meals, reports headcounts, manages wallets and publishes
 notices. These functions correspond to processes 1.0 to 7.0 of the Level~1 DFD.
 
-\textbf{2.3 User characteristics.} Students are hostel residents with ordinary
-smartphone skills. Mess Staff work under time pressure at meal times and need
-one search and one tap per student. Hostel admins use the console a few times
-a day. The Super Admin is a technically capable system administrator.
+\textbf{2.3 User characteristics.} Students (including Mess Committee members)
+use the mobile app. Mess Staff only serve meals at the counter through the web
+console and never use the mobile app. Hostel admins manage menus, notices,
+headcount, check-in and wallets for their hostel. The Super Admin bootstraps the
+system, creates hostels and appoints hostel administrators.
 
 \textbf{2.4 Constraints.} All meal times are configured and displayed in IST.
 Registration is limited to the \texttt{@thapar.edu} domain. Staff accounts are
-never self-registered. The system must run on free hosting tiers, so database
-connections are scarce and polling intervals must stay modest.
+never self-registered. The API is deployed on Render's free plan, and the
+headcount dashboard polls every 30 seconds so that open dashboards do not starve
+the database connections used by check-ins.
 
 \textbf{2.5 Assumptions and dependencies.} Each hostel has exactly one mess.
-Students pay the mess through the institute's existing channel and a hostel
-admin records the top-up. The counter device has a modern browser; the student
-device runs Android or iOS.
+Wallet money enters the system only as top-ups recorded by a hostel admin.
+The web console runs in any modern browser and the mobile app on Android and
+iOS.
 
 \textbf{3. Specific Requirements}
 
@@ -1077,9 +1076,9 @@ modern browser, and the app on Android and iOS.
 
 \subsection{User Stories and Story Cards}
 
-User stories capture requirements from the users' perspective and were used to
-plan the implementation iterations. Each card states the story, its priority and
-its acceptance criteria.
+The story cards below restate the main Savoury requirements from the point of
+view of a student, a mess staff member or a warden, with a priority and the
+condition that shows the story is done.
 
 \newcommand{\storycard}[4]{%
   \begin{tikzpicture}
@@ -1349,8 +1348,8 @@ card shows ``Closed''.
 
 \subsection{Collaboration Diagram}
 
-Collaboration (communication) diagrams emphasise which objects are linked and the
-numbered order of their messages.
+The two diagrams below number the messages between the Savoury objects that take
+part in a wallet top-up and in a student registration.
 
 \textbf{Wallet top-up.} In Figure~\ref{fig:collab1} the wallet page sends message
 1 to the authentication middleware, which authenticates the warden (1.1) and
@@ -2135,15 +2134,15 @@ Dinner & 19:00 -- 21:30 & 14:00 on the same day & Rs.~75.00\\
 window opens until 60 minutes after it closes, for today's meals only.
 \end{table}
 
-\textbf{Entry and exit criteria.} Testing of a feature starts when it builds
-without errors and its pull request passes CI. A release is accepted when every
+\textbf{Entry and exit criteria.} A feature is ready for manual testing once its
+pull request passes the CI workflow. A release is accepted when every
 automated test passes, the web build and the mobile type check succeed, the
 migrations match the schema, and every manual test case in
 Table~\ref{tab:tcindex} has been executed with all steps marked Pass, or with
 every failure recorded as a defect.
 
-\textbf{Responsibilities.} Each member tests the subsystem written by another
-member, so that no module is verified only by its author: Vineet Tripathi tests
+\textbf{Responsibilities.} % TODO: confirm the tester assignment with the team
+Proposed assignment: Vineet Tripathi tests
 the backend API, Shivansh Sahu tests the web console, and Siddharth Singla tests
 the mobile app. Manual test cases that span two clients are executed by the
 tester of the client named first in the test case.
@@ -2472,9 +2471,8 @@ errors. The same checks, together with the migration check and the mobile type
 check, run in GitHub Actions on every pull request. The 13 manual test cases are
 to be executed by the peer reviewers with the test data of
 Table~\ref{tab:testdata}. Table~\ref{tab:peer} summarises the results per module
-together with the peer responsible for reviewing it; the remarks column is left
-for each reviewer to record observations and sign after re-running the tests on
-their own machine.
+together with the proposed reviewer; the last column is for the reviewer's
+remarks and signature.
 
 \begin{table}[H]
 \centering
@@ -2499,8 +2497,8 @@ Server-side check-in rules and override (manual API, TC 4.2, 4.3) & 2 & -- & Vin
 \end{tabular}
 \end{table}
 
-During development and code review the team found and corrected several
-defects, each of which is now covered by an automated test or a manual test
+The commit history of the repository records the following defects that were
+fixed during development, each of which is now covered by an automated test or a manual test
 case: meal cutoffs that fired 5.5 hours late because IST times were treated as
 UTC (AT-01--05); a headcount dashboard that queried the UTC day and showed every
 meal as Final between 00:00 and 05:30 IST (TC 5.1); a check-in endpoint that

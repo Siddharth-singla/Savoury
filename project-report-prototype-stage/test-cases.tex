@@ -1,0 +1,591 @@
+% ============================================================
+% Savoury -- Test Cases
+% Follows the "Test Case Template (Doc:T_01)" layout:
+% header box, pre-conditions, steps table, post-conditions.
+% Compile with pdfLaTeX. Compile twice so the "Page: 1 of N"
+% field is filled in (Overleaf does this automatically).
+% ============================================================
+\documentclass[11pt]{article}
+
+\usepackage[a4paper,landscape,margin=1.8cm]{geometry}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{array}
+\usepackage{tabularx}
+\usepackage{longtable}
+\usepackage[table]{xcolor}
+\usepackage{refcount}
+\usepackage{fancyhdr}
+
+\setlength{\parindent}{0pt}
+\renewcommand{\arraystretch}{1.25}
+
+\newcolumntype{L}[1]{>{\raggedright\arraybackslash}p{#1}}
+\newcolumntype{C}[1]{>{\centering\arraybackslash}p{#1}}
+\definecolor{headgray}{gray}{0.88}
+
+% Running header, as in the template
+\pagestyle{fancy}
+\fancyhf{}
+\lhead{\small Savoury -- Software Engineering (UCS503)}
+\rhead{\small Page \thepage}
+\renewcommand{\headrulewidth}{0pt}
+
+% ---------- Template building blocks ----------
+\newcommand{\val}[1]{\textcolor{blue}{#1}}
+\newcommand{\tcpages}[1]{\number\numexpr\getpagerefnumber{tc:#1:end}-\getpagerefnumber{tc:#1:start}+1\relax}
+
+% \tcheader{number}{name}{subsystem}{short description}
+\newcommand{\tcheader}[4]{%
+  \clearpage
+  \def\tcid{#1}%
+  \noindent\label{tc:#1:start}%
+  \begin{tabularx}{\linewidth}{|L{0.36\linewidth}X L{3.4cm}|}
+    \hline
+    \textbf{Test Case \#:} \val{#1} &
+    \textbf{Test Case Name:} \val{#2} &
+    \textbf{Page:} \val{\textbf{1 of \tcpages{#1}}} \\
+    \textbf{System:} \val{\textbf{Savoury}} &
+    \textbf{Subsystem:} \val{\textbf{#3}} & \\
+    \textbf{Designed by:} \val{\textbf{Savoury Team}} &
+    \textbf{Design Date:} \val{\textbf{30/10/2026}} & \\
+    \textbf{Executed by:} &
+    \textbf{Execution Date:} & \\
+    \multicolumn{3}{|L{\dimexpr\linewidth-2\tabcolsep-2\arrayrulewidth\relax}|}%
+      {\textbf{Short Description:} \val{\textbf{#4}}} \\
+    \hline
+  \end{tabularx}\par\medskip}
+
+% \tcbox{title}{content}  -- pre/post-conditions box
+\newcommand{\tcbox}[2]{%
+  \noindent\begin{tabularx}{\linewidth}{|X|}
+    \hline
+    \textbf{#1}\newline #2 \\
+    \hline
+  \end{tabularx}\par\medskip}
+
+% Steps table
+\newcounter{tcstep}
+\newcommand{\tcstep}[2]{\stepcounter{tcstep}\thetcstep & #1 & #2 & & \\ \hline}
+\newcommand{\tccheck}[1]{\stepcounter{tcstep}\thetcstep & \textbf{Check post-condition #1} & & & \\ \hline}
+\newenvironment{tcsteps}{%
+  \setcounter{tcstep}{0}\small
+  \begin{longtable}{|C{0.8cm}|L{7.0cm}|L{10.4cm}|C{1.1cm}|L{3.9cm}|}
+    \hline
+    \rowcolor{headgray}\textbf{Step} & \textbf{Action} &
+      \textbf{Expected System Response} & \textbf{Pass/ Fail} & \textbf{Comment} \\
+    \hline
+    \endhead}
+  {\end{longtable}}
+
+% Post-conditions box that also closes the test case
+\newcommand{\tcend}[1]{\tcbox{Post-conditions}{#1}\label{tc:\tcid:end}}
+
+\begin{document}
+
+% ============================================================
+% Title page
+% ============================================================
+\thispagestyle{empty}
+\begin{center}
+  \vspace*{2.5cm}
+  {\fontsize{40}{48}\selectfont\bfseries Savoury\par}
+  \vspace{0.6cm}
+  {\fontsize{30}{36}\selectfont\bfseries Test Cases\par}
+  \vspace{0.8cm}
+  {\Large Hostel Mess Management System\par}
+  \vspace{0.4cm}
+  {\large Based on the Test Case Template (Doc:T\_01)\par}
+  \vspace{1.5cm}
+  {\large Siddharth Singla (1024170252) \quad
+   Vineet Tripathi (1024170253) \quad
+   Shivansh Sahu (1024170249)\par}
+  \vspace{0.5cm}
+  {\large UCS503 Software Engineering, Thapar Institute of Engineering \& Technology, Patiala\par}
+\end{center}
+
+% ============================================================
+% Test environment and data
+% ============================================================
+\clearpage
+\section*{Test Environment and Test Data}
+
+All test cases use the accounts and settings below. \textbf{D} is the date the
+test is run. All times are Indian Standard Time (IST). The password for every
+test account is \texttt{Test@1234}. Each test case lists its own
+pre-conditions, so test cases can be run on different days; set up the
+pre-conditions before each one.
+
+\medskip
+\textbf{Clients and tools:} web console in a desktop browser; the Savoury
+mobile app on an Android phone set to IST; Postman for steps that call the API
+directly. API steps send the header \texttt{Authorization: Bearer <token>}, where
+the token comes from \texttt{POST /auth/login}. API dates are sent as
+\texttt{<date>T12:00:00Z}.
+
+\medskip
+\begin{tabularx}{\linewidth}{|L{4.2cm}|L{5.4cm}|L{4.2cm}|L{2.4cm}|X|}
+  \hline
+  \rowcolor{headgray}\textbf{Name} & \textbf{Email} & \textbf{Role} & \textbf{Hostel} & \textbf{Notes} \\ \hline
+  Super Admin  & admin@thapar.edu       & Super Admin    & --       & Created on the Setup page \\ \hline
+  Neha Gupta   & warden.a@thapar.edu    & Warden         & Hostel A & Created in TC 2.1 \\ \hline
+  Arjun Mehta  & arjun@thapar.edu       & Co-Warden      & Hostel A & Created in TC 2.1 \\ \hline
+  Ravi Singh   & caretaker.a@thapar.edu & Caretaker      & Hostel A & Created in TC 2.1 \\ \hline
+  Suresh Yadav & staff.a@thapar.edu     & Mess Staff     & Hostel A & Created in TC 2.2 \\ \hline
+  Rahul Kumar  & rahul@thapar.edu       & Student        & Hostel A & Roll 102103001, wallet Rs.~1000.00 \\ \hline
+  Priya Sharma & priya@thapar.edu       & Student        & Hostel A & Roll 102103002, wallet Rs.~1000.00 \\ \hline
+  Karan Patel  & karan@thapar.edu       & Student, then Mess Committee & Hostel A & Roll 102103003, wallet Rs.~1000.00; promoted in TC 2.2 \\ \hline
+  Dev Malhotra & dev@thapar.edu         & Student        & Hostel A & Roll 102103004, no wallet until TC 6.1 \\ \hline
+  Aman Verma   & aman@thapar.edu        & Student        & Hostel B & Roll 102203001, wallet Rs.~1000.00 \\ \hline
+\end{tabularx}
+
+\medskip
+Wallets are for the semester \texttt{Autumn Semester 2026}.
+
+\medskip
+\begin{tabularx}{\linewidth}{|L{4cm}|L{5cm}|L{5cm}|X|}
+  \hline
+  \rowcolor{headgray}\textbf{Meal} & \textbf{Serving window} & \textbf{Cutoff} & \textbf{Rate} \\ \hline
+  Breakfast & 07:00 -- 09:30 & 00:00 on the same day & Rs.~75.00 \\ \hline
+  Lunch     & 12:00 -- 14:30 & 09:00 on the same day & Rs.~75.00 \\ \hline
+  Dinner    & 19:00 -- 21:30 & 14:00 on the same day & Rs.~75.00 \\ \hline
+\end{tabularx}
+
+\medskip
+Counter check-in is accepted from 60 minutes before a meal's serving window
+opens until 60 minutes after it closes, for today's meals only.
+
+% ============================================================
+% Index
+% ============================================================
+\clearpage
+\section*{Index of Test Cases}
+
+\begin{tabularx}{\linewidth}{|L{1.6cm}|L{6.5cm}|L{4.2cm}|L{3cm}|X|}
+  \hline
+  \rowcolor{headgray}\textbf{\#} & \textbf{Test Case Name} & \textbf{Subsystem} & \textbf{Client} & \textbf{Requirements (SRS 3.2)} \\ \hline
+  1.1 & Student Registration                 & Authentication  & Mobile        & FR-2 \\ \hline
+  1.2 & Staff Portal Login                   & Authentication  & Web           & FR-3, FR-4 \\ \hline
+  2.1 & Appoint Hostel Administrators        & User Management & Web           & FR-8, FR-10 \\ \hline
+  2.2 & Add Mess Staff and Role Locks        & User Management & Web           & FR-9, FR-10, FR-11 \\ \hline
+  3.1 & Opt Out of a Single Meal             & Meal Booking    & Mobile, API   & FR-14, FR-15, FR-17 \\ \hline
+  3.2 & Opt Out Across a Date Range          & Meal Booking    & Mobile        & FR-18, FR-19 \\ \hline
+  4.1 & Serve a Student at the Counter       & Counter Check-In & Web, Mobile  & FR-21, FR-22 \\ \hline
+  4.2 & Check-In Rules Enforced by the Server & Counter Check-In & API         & FR-4, FR-23, FR-24, FR-26, FR-27 \\ \hline
+  4.3 & Walk-in Override                     & Counter Check-In & API          & FR-25 \\ \hline
+  5.1 & Live Headcount Dashboard             & Headcount       & Web, Mobile   & FR-28, FR-29, FR-30 \\ \hline
+  6.1 & Wallet Top-Up                        & Wallet          & Web, Mobile   & FR-31, FR-32 \\ \hline
+  6.2 & Semester-End Cashout                 & Wallet          & Mobile, Web, API & FR-33, FR-34, FR-35 \\ \hline
+  7.1 & Hostel-Scoped Notices                & Notices         & Web, Mobile   & FR-39, FR-40, FR-41 \\ \hline
+\end{tabularx}
+
+% ============================================================
+% 1.1 Student Registration
+% ============================================================
+\tcheader{1.1}{Student Registration}{Authentication}
+  {Test that a student can register on the mobile app with a college email (FR-2)}
+
+\tcbox{Pre-conditions}{%
+  The mobile app is open on the Sign In screen.\newline
+  Hostel B exists.\newline
+  No account exists for isha@thapar.edu.}
+
+\begin{tcsteps}
+\tcstep{Open the registration screen from the Sign In screen}
+       {The system displays the registration form with name, email, password, roll number, room number, phone and a `Select Hostel' list}
+\tcstep{Enter name `Isha Arora', email `isha@gmail.com', password `Test@1234', roll `102103010', room `B-214', phone `9876543210', select `Hostel B' and tap `Create Account'}
+       {The system shows a `Registration Failed' message saying a college (@thapar.edu) email is required. No account is created}
+\tcstep{Change the email to `isha@thapar.edu' and the phone to `98765', then tap `Create Account'}
+       {The system shows a `Registration Failed' message saying the phone number must be exactly 10 digits}
+\tcstep{Change the phone to `9876543210' and tap `Create Account'}
+       {The account is created, the student is signed in, and the home screen with the menu is displayed}
+\tccheck{1}
+\tcstep{Sign out, open the registration screen again and repeat step 4 with the same details}
+       {The system shows a `Registration Failed' message saying the email is already in use}
+\tccheck{2}
+\end{tcsteps}
+
+\tcend{%
+  1. A user `Isha Arora' with email isha@thapar.edu, role Student, Hostel B and roll 102103010 is saved in the database.\newline
+  2. Only one account exists with the email isha@thapar.edu.}
+
+% ============================================================
+% 1.2 Staff Portal Login
+% ============================================================
+\tcheader{1.2}{Staff Portal Login}{Authentication}
+  {Test login to the web console, including wrong input and student accounts (FR-3, FR-4)}
+
+\tcbox{Pre-conditions}{%
+  The web console is open on the login page.\newline
+  The Warden account warden.a@thapar.edu (Hostel A) and the Student account rahul@thapar.edu exist, both with password `Test@1234'.}
+
+\begin{tcsteps}
+\tcstep{Leave both fields empty and click `Sign In'}
+       {The system displays `Both fields are required.'}
+\tcstep{Enter `warden.a@gmail.com' and `Test@1234', click `Sign In'}
+       {The system displays `Email must end with @thapar.edu.'}
+\tcstep{Enter `warden.a@thapar.edu' and `wrongpass', click `Sign In'}
+       {The system displays `Invalid email or password.'}
+\tcstep{Enter `rahul@thapar.edu' and `Test@1234', click `Sign In'}
+       {The system displays `Students cannot access the staff portal. Please use the mobile app.' and stays on the login page}
+\tcstep{Enter `warden.a@thapar.edu' and `Test@1234', click `Sign In'}
+       {The system opens the Check-In page. The sidebar shows Check-In, Headcount, Menu, Users, Wallet and Notices, but not Hostels}
+\tccheck{1}
+\tcstep{Click the sign-out icon next to the user's name, then open the \texttt{/users} address directly}
+       {The system shows the login page in both cases}
+\tccheck{2}
+\end{tcsteps}
+
+\tcend{%
+  1. The browser holds a session token for Neha Gupta with role Warden and Hostel A.\newline
+  2. After sign-out, the browser holds no session token.}
+
+% ============================================================
+% 2.1 Appoint Hostel Administrators
+% ============================================================
+\tcheader{2.1}{Appoint Hostel Administrators}{User Management}
+  {Test that the Super Admin can appoint one Warden, one Co-Warden and Caretakers per hostel (FR-8, FR-10)}
+
+\tcbox{Pre-conditions}{%
+  The user is logged in to the web console as the Super Admin and the Users page is open.\newline
+  Hostel A exists and has no Warden, Co-Warden or Caretaker.}
+
+\begin{tcsteps}
+\tcstep{Click `Add User'}
+       {The system displays the Add User form with name, email, password, role, hostel and phone fields}
+\tcstep{Enter `Neha Gupta', `warden.a@thapar.edu', `Test@1234', choose role `Warden', leave hostel unselected and click `Create User'}
+       {The system displays `Please select a hostel for this user' and does not create the account}
+\tcstep{Select hostel `Hostel A' and click `Create User'}
+       {The form closes and Neha Gupta appears in the list with a `Warden' badge and Hostel A}
+\tccheck{1}
+\tcstep{Click `Add User', enter `Arjun Mehta', `arjun@thapar.edu', `Test@1234', role `Warden', hostel `Hostel A', click `Create User'}
+       {The form stays open and displays `This hostel already has a Warden. Remove the existing one first.'}
+\tcstep{Change the role to `Co-Warden' and click `Create User'}
+       {The form closes and Arjun Mehta appears with a `Co-Warden' badge}
+\tcstep{Click `Add User', enter `Ravi Singh', `caretaker.a@thapar.edu', `Test@1234', role `Caretaker', hostel `Hostel A', click `Create User'}
+       {The form closes and Ravi Singh appears with a `Caretaker' badge}
+\tccheck{2}
+\end{tcsteps}
+
+\tcend{%
+  1. Neha Gupta is saved with role Warden in Hostel A.\newline
+  2. Hostel A has exactly one Warden (Neha Gupta), one Co-Warden (Arjun Mehta) and one Caretaker (Ravi Singh).}
+
+% ============================================================
+% 2.2 Add Mess Staff and Role Locks
+% ============================================================
+\tcheader{2.2}{Add Mess Staff and Role Locks}{User Management}
+  {Test that a Warden can add Mess Staff and switch students to Mess Committee, and that a Caretaker cannot add staff (FR-9, FR-10, FR-11)}
+
+\tcbox{Pre-conditions}{%
+  Hostel A has the Warden Neha Gupta, the Caretaker Ravi Singh and the students Priya Sharma and Karan Patel (role Student).\newline
+  No account exists for staff.a@thapar.edu.\newline
+  The user is logged in to the web console as warden.a@thapar.edu.}
+
+\begin{tcsteps}
+\tcstep{Open the Users page}
+       {The system lists only Hostel A users and shows an `Add Mess Staff' button}
+\tcstep{Click `Add Mess Staff', enter `Suresh Yadav', `staff.a@thapar.edu', `Test@1234' and click `Create User'}
+       {The role field shows `Mess Staff' and cannot be changed. The form closes and Suresh Yadav appears with a `Mess Staff' badge}
+\tccheck{1}
+\tcstep{Look at the Role \& Access column for Suresh Yadav, Ravi Singh and Neha Gupta}
+       {Each role is shown as a fixed badge with no drop-down, so it cannot be changed}
+\tcstep{Change Karan Patel's role drop-down from `Student' to `Mess Sec.'}
+       {Karan Patel's badge changes to `Mess Sec.'}
+\tcstep{Change Priya Sharma's role drop-down from `Student' to `Mess Staff'}
+       {The system displays `You can only switch student accounts between Student and Mess Committee.' and Priya stays a Student}
+\tccheck{2}
+\tcstep{Sign out and log in as caretaker.a@thapar.edu, then open the Users page}
+       {The system lists Hostel A users and shows no `Add Mess Staff' button}
+\end{tcsteps}
+
+\tcend{%
+  1. Suresh Yadav is saved with role Mess Staff in Hostel A.\newline
+  2. Karan Patel's role is Mess Committee and Priya Sharma's role is still Student.}
+
+% ============================================================
+% 3.1 Opt Out of a Single Meal
+% ============================================================
+\tcheader{3.1}{Opt Out of a Single Meal}{Meal Booking}
+  {Test opting out of and back into one meal before its cutoff, and that the meal is closed after the cutoff (FR-14, FR-15, FR-17)}
+
+\tcbox{Pre-conditions}{%
+  Rahul Kumar is signed in to the mobile app.\newline
+  The current time on day D is between 07:00 and 08:59, before the 09:00 Lunch cutoff.\newline
+  A menu is published for Lunch on day D, and Rahul has not changed his Lunch booking for day D.}
+
+\begin{tcsteps}
+\tcstep{Open the home screen and look at the Lunch card for day D}
+       {The card shows `You're opted in' and `Tap to opt out'}
+\tcstep{Tap the Lunch toggle}
+       {The card shows `Opted out' and `Tap to opt back in'}
+\tccheck{1}
+\tcstep{Tap the Lunch toggle again}
+       {The card shows `You're opted in'}
+\tcstep{Tap the Lunch toggle once more}
+       {The card shows `Opted out'}
+\tccheck{2}
+\tcstep{After 09:00, reopen the app and look at the Lunch card}
+       {The card shows `Opted out' and `Closed $\cdot$ You will not be served', and there is no toggle}
+\tcstep{In Postman, as Rahul, send \texttt{PUT /bookings/toggle} for Lunch on day D with status \texttt{OPTED\_IN}}
+       {The system returns HTTP 400 with `Cutoff time has passed for this meal'}
+\tccheck{3}
+\end{tcsteps}
+
+\tcend{%
+  1. Rahul's Lunch booking for day D is saved with status \texttt{OPTED\_OUT}.\newline
+  2. Exactly one booking exists for Rahul, Lunch and day D, with status \texttt{OPTED\_OUT}.\newline
+  3. That booking is still \texttt{OPTED\_OUT} after the cutoff.}
+
+% ============================================================
+% 3.2 Opt Out Across a Date Range
+% ============================================================
+\tcheader{3.2}{Opt Out Across a Date Range}{Meal Booking}
+  {Test scheduling an absence for several days, cancelling one day, and skipping meals past their cutoff (FR-18, FR-19)}
+
+\tcbox{Pre-conditions}{%
+  Rahul Kumar is signed in to the mobile app.\newline
+  The current time on day D is between 09:00 and 13:59, so Breakfast and Lunch on day D are past their cutoff and Dinner is not.\newline
+  Rahul has no scheduled absences from day D to day D+4.}
+
+\begin{tcsteps}
+\tcstep{Open the Opt-Out Calendar}
+       {The system displays the meal absence planner and `No Upcoming Absences'}
+\tcstep{Select day D+2, then day D+4}
+       {Days D+2 to D+4 are highlighted and the button reads `Opt Out (3d)'}
+\tcstep{Tap `Opt Out (3d)', then tap `Confirm'}
+       {The system displays `Opt-Out Confirmed' with `Successfully opted out of 9 open meal(s) across 3 day(s).' The three days are listed under scheduled absences}
+\tccheck{1}
+\tcstep{Tap `Re-Opt In' on day D+3 and tap `Confirm'}
+       {The system displays `Re-opted In' and day D+3 is removed from the list}
+\tccheck{2}
+\tcstep{Select only day D, tap `Opt Out (1d)', then tap `Confirm'}
+       {The system displays `Opt-Out Confirmed' with `Successfully opted out of 1 open meal(s) across 1 day(s).' and a note that 2 meal(s) whose cutoff had passed were kept as-is}
+\tccheck{3}
+\end{tcsteps}
+
+\tcend{%
+  1. Absences are saved for days D+2, D+3 and D+4, and all 9 of their meals are \texttt{OPTED\_OUT}.\newline
+  2. The absence for day D+3 is removed and its 3 meals are \texttt{OPTED\_IN} again. Days D+2 and D+4 are unchanged.\newline
+  3. Dinner on day D is \texttt{OPTED\_OUT}. Breakfast and Lunch on day D are unchanged.}
+
+% ============================================================
+% 4.1 Serve a Student at the Counter
+% ============================================================
+\tcheader{4.1}{Serve a Student at the Counter}{Counter Check-In}
+  {Test that serving a student records the meal and deducts the meal rate from the wallet (FR-21, FR-22)}
+
+\tcbox{Pre-conditions}{%
+  The user is logged in to the web console as Mess Staff staff.a@thapar.edu.\newline
+  The current time on day D is between 12:00 and 14:30 (Lunch is being served).\newline
+  Rahul Kumar is opted in to Lunch on day D and has a wallet balance of Rs.~1000.00.\newline
+  Priya Sharma has opted out of Lunch on day D.}
+
+\begin{tcsteps}
+\tcstep{Open the Check-In page with Lunch selected}
+       {The system shows `Service Active'. Rahul Kumar is listed with a `Tap to Serve' button. Priya Sharma is not listed}
+\tcstep{Type `102103001' in `Search records...'}
+       {Only Rahul Kumar is listed}
+\tcstep{Click `Tap to Serve' for Rahul Kumar}
+       {Rahul leaves the waiting list and appears in the recent check-ins with a timestamp. The served count increases by 1}
+\tcstep{Wait 5 seconds and reload the page}
+       {Rahul Kumar is still not in the waiting list}
+\tccheck{1}
+\tcstep{Sign in to the mobile app as Rahul Kumar and open Wallet}
+       {The balance shows Rs.~925.00 and the transaction history shows a `Meal Deduction' of Rs.~75.00}
+\tccheck{2}
+\end{tcsteps}
+
+\tcend{%
+  1. An attendance record is saved for Rahul's Lunch on day D with result \texttt{SERVED}, checked in by Suresh Yadav.\newline
+  2. Rahul's wallet balance is Rs.~925.00 and a \texttt{MEAL\_DEDUCTION} transaction of Rs.~75.00 is saved for that attendance.}
+
+% ============================================================
+% 4.2 Check-In Rules Enforced by the Server
+% ============================================================
+\tcheader{4.2}{Check-In Rules Enforced by the Server}{Counter Check-In}
+  {Test that the API rejects duplicate, opted-out, other-hostel, no-wallet and out-of-hours check-ins (FR-4, FR-23, FR-24, FR-26, FR-27)}
+
+\tcbox{Pre-conditions}{%
+  Postman holds a token for Mess Staff staff.a@thapar.edu (Hostel A) and the ids of the Lunch and Dinner meal types.\newline
+  The current time on day D is between 12:00 and 14:30.\newline
+  Rahul Kumar has already been served Lunch on day D (Test Case 4.1) and his balance is Rs.~925.00.\newline
+  Priya Sharma has opted out of Lunch on day D. Aman Verma is in Hostel B. Dev Malhotra (Hostel A) has no wallet.}
+
+\begin{tcsteps}
+\tcstep{Send \texttt{POST /attendance/mark-served} for Rahul Kumar, Lunch, day D}
+       {HTTP 200 with attendance result \texttt{DUPLICATE}}
+\tccheck{1}
+\tcstep{Send the same request for Priya Sharma}
+       {HTTP 400 with `Student opted out of this meal'}
+\tcstep{Send the same request for Aman Verma}
+       {HTTP 403 with `You can only serve students from your own hostel'}
+\tcstep{Send the same request for Dev Malhotra}
+       {HTTP 422 with `Student has no wallet yet. Top up their wallet from the Wallet page first.'}
+\tcstep{Send the request for Karan Patel, Lunch, day D+1}
+       {HTTP 400 with `Students can only be checked in for today's meals.'}
+\tcstep{Send the request for Karan Patel with the Dinner meal type, day D}
+       {HTTP 400 with `Dinner check-in is only open from 19:00 to 21:30 ($\pm$60 min).'}
+\tcstep{Send the request for Karan Patel without the Authorization header}
+       {HTTP 401 with `Unauthorized: Missing or invalid token'}
+\tccheck{2}
+\end{tcsteps}
+
+\tcend{%
+  1. Rahul still has exactly one Lunch attendance record for day D and his balance is still Rs.~925.00.\newline
+  2. No attendance records were created in steps 3--8, and the wallets of Priya Sharma, Aman Verma and Karan Patel are unchanged.}
+
+% ============================================================
+% 4.3 Walk-in Override
+% ============================================================
+\tcheader{4.3}{Walk-in Override}{Counter Check-In}
+  {Test that a hostel admin can serve a walk-in student with a reason, and that Mess Staff cannot (FR-25)}
+
+\tcbox{Pre-conditions}{%
+  Postman holds tokens for Mess Staff staff.a@thapar.edu and Warden warden.a@thapar.edu, both in Hostel A.\newline
+  The current time on day D is between 12:00 and 14:30.\newline
+  Priya Sharma has opted out of Lunch on day D, has not been served, and has a balance of Rs.~1000.00.}
+
+\begin{tcsteps}
+\tcstep{As Mess Staff, send \texttt{POST /attendance/override} for Priya Sharma, Lunch, day D with reason `Returned early from home'}
+       {HTTP 403 with `Forbidden: Insufficient privileges'}
+\tcstep{As the Warden, send the same request with an empty reason}
+       {HTTP 400 with a validation error for the reason field. Nothing is saved}
+\tcstep{As the Warden, send the request with reason `Returned early from home'}
+       {HTTP 200 with attendance result \texttt{OVERRIDE} and the reason}
+\tccheck{1}
+\tcstep{As the Warden, send the request from step 3 again}
+       {HTTP 409 with `Student has already been served for this meal'}
+\tccheck{2}
+\end{tcsteps}
+
+\tcend{%
+  1. An attendance record is saved for Priya's Lunch on day D with result \texttt{OVERRIDE}, reason `Returned early from home', checked in by Neha Gupta. Priya's balance is Rs.~925.00 and a \texttt{MEAL\_DEDUCTION} of Rs.~75.00 is saved.\newline
+  2. Priya still has exactly one Lunch attendance record and one deduction for day D.}
+
+% ============================================================
+% 5.1 Live Headcount Dashboard
+% ============================================================
+\tcheader{5.1}{Live Headcount Dashboard}{Headcount}
+  {Test that expected and served counts and meal badges update live (FR-28, FR-29, FR-30)}
+
+\tcbox{Pre-conditions}{%
+  Hostel A has exactly 4 students: Rahul Kumar, Priya Sharma, Karan Patel and Dev Malhotra.\newline
+  On day D, only Priya Sharma has opted out of Lunch, and nobody has been served yet.\newline
+  The current time is between 12:00 and 13:30 on day D.\newline
+  Browser 1 is logged in as warden.a@thapar.edu, browser 2 as staff.a@thapar.edu. Karan Patel is signed in to the mobile app.}
+
+\begin{tcsteps}
+\tcstep{In browser 1, open the Headcount page}
+       {The summary shows Total Students 4, Total Booked (All Meals) 11 and Served Today 0. Lunch shows Expected 3, Actual 0, 0\% and the `Active' badge. Breakfast shows `Over' and Dinner shows `Upcoming'}
+\tcstep{In browser 2, open Check-In for Lunch and click `Tap to Serve' for Rahul Kumar}
+       {Rahul leaves the waiting list}
+\tcstep{In browser 1, wait up to 5 seconds without reloading}
+       {Lunch shows Actual 1 and 33\%. Served Today shows 1}
+\tccheck{1}
+\tcstep{On the mobile app, Karan Patel opts out of Dinner on day D}
+       {Within 5 seconds, Dinner's Expected drops from 4 to 3 and Total Booked drops to 10}
+\tcstep{After 14:30, reload the Headcount page}
+       {Lunch shows the `Over' badge with Actual 1 and 33\%. Dinner shows the `Final' badge}
+\tccheck{2}
+\end{tcsteps}
+
+\tcend{%
+  1. The headcount for day D reports Lunch expected 3, served 1, and a total served of 1.\newline
+  2. After Lunch ends, its expected and served counts are unchanged (3 and 1).}
+
+% ============================================================
+% 6.1 Wallet Top-Up
+% ============================================================
+\tcheader{6.1}{Wallet Top-Up}{Wallet}
+  {Test that a Warden can top up a student's wallet and the student sees the new balance (FR-31, FR-32)}
+
+\tcbox{Pre-conditions}{%
+  The user is logged in to the web console as warden.a@thapar.edu.\newline
+  Dev Malhotra (Hostel A) has no wallet. Aman Verma is in Hostel B.}
+
+\begin{tcsteps}
+\tcstep{Open the Wallet page}
+       {The system displays the top-up form with a student search, an amount field and the semester `Autumn Semester 2026'}
+\tcstep{Search `Aman'}
+       {No student is found, because Aman is not in Hostel A}
+\tcstep{Search `Dev', select Dev Malhotra and enter amount `0'}
+       {The `Process Top-Up' button stays disabled}
+\tcstep{Enter amount `1500', note `Semester advance' and click `Process Top-Up'}
+       {The system confirms the top-up and clears the form}
+\tccheck{1}
+\tcstep{Top up Dev Malhotra again with amount `500'}
+       {The system confirms the top-up}
+\tccheck{2}
+\tcstep{Sign in to the mobile app as Dev Malhotra and open Wallet}
+       {The balance shows Rs.~2000.00 and the history shows two `Top Up' entries}
+\end{tcsteps}
+
+\tcend{%
+  1. A wallet for Dev Malhotra, `Autumn Semester 2026', is saved with balance Rs.~1500.00 and one \texttt{TOPUP} transaction of Rs.~1500.00 with note `Semester advance'.\newline
+  2. Dev still has one wallet, now with balance Rs.~2000.00 and two \texttt{TOPUP} transactions.}
+
+% ============================================================
+% 6.2 Semester-End Cashout
+% ============================================================
+\tcheader{6.2}{Semester-End Cashout}{Wallet}
+  {Test that cashout is locked until the semester ends, then requested by the student and approved by the Warden (FR-33, FR-34, FR-35)}
+
+\tcbox{Pre-conditions}{%
+  Rahul Kumar's wallet for `Autumn Semester 2026' has a balance of Rs.~925.00 and he has no cashout requests.\newline
+  Hostel A's fee plan `Autumn Semester 2026' has the semester end date 15/12/2026, a future date.\newline
+  Rahul is signed in to the mobile app, warden.a@thapar.edu to the web console, and Postman holds tokens for both.}
+
+\begin{tcsteps}
+\tcstep{On the mobile app, open Wallet and tap the cashout button}
+       {The card shows `Cashout Locked Until Semester End'. Tapping shows a `Locked' message with the semester end date}
+\tcstep{In Postman, as Rahul, send \texttt{POST /wallet/cashout-request} with amount 925}
+       {HTTP 403 with `Cashout is only available after your hostel's semester ends on 15 December 2026.'}
+\tcstep{As the Super Admin, change the fee plan's semester end date to the day before day D. Reload Wallet on the mobile app}
+       {The card shows `Cashout Available' and the button `Request Cashout of Rs.~925.00'}
+\tcstep{In Postman, as Rahul, send the cashout request with amount 5000}
+       {HTTP 400 with `Insufficient balance'}
+\tcstep{On the mobile app, tap `Request Cashout of Rs.~925.00', then `Request'}
+       {The system displays `Request Submitted'}
+\tccheck{1}
+\tcstep{In the web console, open the Wallet page's cashout requests and click `Approve' on Rahul's request}
+       {The request leaves the pending list}
+\tccheck{2}
+\tcstep{In Postman, as the Warden, send \texttt{POST /wallet/cashout-requests/<id>/resolve} with status \texttt{APPROVED} for the same request}
+       {HTTP 400 with `Request is already resolved'}
+\end{tcsteps}
+
+\tcend{%
+  1. A cashout request for Rahul of Rs.~925.00 is saved with status \texttt{PENDING}, and his balance is still Rs.~925.00.\newline
+  2. The request is \texttt{APPROVED} and resolved by Neha Gupta. Rahul's balance is Rs.~0.00 and a \texttt{CASHOUT} transaction of Rs.~925.00 is saved.}
+
+% ============================================================
+% 7.1 Hostel-Scoped Notices
+% ============================================================
+\tcheader{7.1}{Hostel-Scoped Notices}{Notices}
+  {Test that notices reach only their own hostel and that Mess Committee members delete only their own notices (FR-39, FR-40, FR-41)}
+
+\tcbox{Pre-conditions}{%
+  Neha Gupta (Warden) and Karan Patel (Mess Committee) are in Hostel A. Rahul Kumar is a student in Hostel A and Aman Verma in Hostel B.\newline
+  No notices exist.}
+
+\begin{tcsteps}
+\tcstep{In the web console as warden.a@thapar.edu, open Notices, enter title `Water supply off on Sunday' and a message, choose `Everyone (Public)' and click `Post Notice'}
+       {The notice appears at the top of the list with Neha Gupta's name and a Warden badge}
+\tccheck{1}
+\tcstep{On the mobile app as Rahul Kumar, open Notices}
+       {The notice `Water supply off on Sunday' is shown}
+\tcstep{On the mobile app as Aman Verma, open Notices}
+       {The notice is not shown}
+\tcstep{In the web console as karan@thapar.edu, post the notice `Menu change tomorrow'}
+       {Karan's notice shows a delete icon. Neha's notice shows no delete icon}
+\tcstep{Click the delete icon on Karan's notice}
+       {Karan's notice is removed from the list}
+\tccheck{2}
+\end{tcsteps}
+
+\tcend{%
+  1. The notice `Water supply off on Sunday' is saved for Hostel A with no target role, posted by Neha Gupta.\newline
+  2. Karan's notice is deleted and Neha's notice still exists.}
+
+\end{document}

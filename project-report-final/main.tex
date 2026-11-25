@@ -2,7 +2,7 @@
 % Savoury - Hostel Mess Management System
 % UCS503 Software Engineering Project Report (End-Semester Evaluation)
 %
-% Compile with pdfLaTeX (Overleaf default) or XeLaTeX/Tectonic.
+% Compile with pdfLaTeX (Overleaf: Menu > Compiler > pdfLaTeX).
 %
 % Screenshots: every image in this report is a placeholder box that
 % describes what the screenshot must show. Create a folder named
@@ -12,16 +12,9 @@
 % ============================================================
 \documentclass[11pt,a4paper]{article}
 
-\usepackage{iftex}
-\ifPDFTeX
-  \usepackage[T1]{fontenc}
-  \usepackage[utf8]{inputenc}
-  \usepackage{mathptmx}
-\else
-  \usepackage{mathptmx}
-  \usepackage{fontspec}
-  \setmainfont{texgyretermes}[Extension=.otf,UprightFont=*-regular,BoldFont=*-bold,ItalicFont=*-italic,BoldItalicFont=*-bolditalic]
-\fi
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{mathptmx}
 \usepackage[margin=2.5cm,headheight=14pt]{geometry}
 \usepackage{amsmath,amssymb}
 \usepackage{graphicx}
@@ -65,7 +58,7 @@
     \fcolorbox{phborder}{phfill}{%
       \parbox[c][#2][c]{0.94\linewidth}{\centering
         {\small\bfseries\color{phtitle}[ SCREENSHOT PLACEHOLDER ]}\\[0.35em]
-        {\footnotesize\ttfamily #1}\\[0.7em]
+        {\footnotesize\ttfamily\detokenize{#1}}\\[0.7em]
         \parbox{0.88\linewidth}{\RaggedRight\small #3}}}%
   }}
 
@@ -156,7 +149,7 @@ Cutoff-Driven Booking and Wallet-Based Billing\par}
 (1024170253) Vineet Tripathi\\
 (1024170249) Shivansh Sahu\\[1em]
 % TODO: replace with your year and branch
-[Year, Branch]
+[3rd, COPC]
 \end{minipage}\hfill
 \begin{minipage}[t]{0.38\textwidth}
 \raggedleft
@@ -1789,67 +1782,42 @@ minutes per IP overall and 30 requests per 15 minutes on \texttt{/auth}.
 
 \subsection{Screenshots}
 
-The screenshots below are to be taken from the deployed application (web console
-on Vercel, API on Render) or from a local run with the seeded test data described
-in Section~\ref{sec:testing}. Each placeholder states what the screenshot must
-show. Save each image under the file name printed in its box, inside a folder
-named \texttt{screenshots} next to this \texttt{.tex} file, and recompile; the
-box is replaced by the image automatically.
+The screenshots below were taken from the running application.
 
 \subsubsection{Web Console}
 
 \begin{figure}[H]
 \centering
-\shot{screenshots/web-login.png}{6.2cm}{Web console \textbf{login page} with the
-e-mail and password fields and the ``Sign In'' button. Optionally show the
-red message ``Students cannot access the staff portal. Please use the mobile
-app.'' after signing in with a student account (test case 1.2, step 4).}
+\shot{webconsole.png}{7.5cm}{Web console login page.}
 \caption{Staff portal login page}
 \label{fig:ss-login}
 \end{figure}
 
 \begin{figure}[H]
 \centering
-\shot{screenshots/web-checkin.png}{8cm}{\textbf{Check-In} page signed in as Mess
-Staff (\texttt{staff.a@thapar.edu}) during lunch: the sidebar shows only
-Check-In, the meal selector shows Lunch with the ``Service Active'' status, the
-search box ``Search records...'' contains a roll number, the waiting list shows
-students with ``Tap to Serve'' buttons, and the recent check-ins list shows at
-least one served student with a timestamp and the served count.}
-\caption{Counter check-in page during service}
+\shot{rajesh.png}{7.5cm}{Check-In page signed in as Mess Staff.}
+\caption{Staff check-in}
 \label{fig:ss-checkin}
 \end{figure}
 
 \begin{figure}[H]
 \centering
-\shot{screenshots/web-headcount.png}{8cm}{\textbf{Headcount} dashboard signed in
-as the Warden during lunch: summary cards Total Students, Total Booked (All
-Meals) and Served Today; three meal cards with Expected, Actual, served-percentage
-donut and cutoff time; Breakfast with the ``Over'' badge, Lunch with ``Active''
-and Dinner with ``Upcoming''; the Today / Tomorrow switch at the top.}
+\shot{warden headcount.png}{7.5cm}{Headcount dashboard signed in as the Warden.}
 \caption{Live headcount dashboard}
 \label{fig:ss-headcount}
 \end{figure}
 
 \begin{figure}[H]
 \centering
-\shot{screenshots/web-users.png}{7.5cm}{\textbf{Users} page signed in as the
-Warden of Hostel A: the user table (User, Role \& Access, Location, Actions)
-listing only Hostel A users; Warden, Caretaker and Mess Staff shown as fixed
-badges; a student row with the Student / Mess Sec.\ role drop-down; the ``Add
-Mess Staff'' button at the top right.}
+\shot{user management.png}{7.5cm}{Users page signed in as the Warden.}
 \caption{User management page}
 \label{fig:ss-users}
 \end{figure}
 
 \begin{figure}[H]
 \centering
-\shot{screenshots/web-wallet.png}{7.5cm}{\textbf{Wallet} page signed in as the
-Warden: the top-up form with student search (Dev Malhotra selected), amount,
-note and semester ``Autumn Semester 2026'' with the ``Process Top-Up'' button;
-below it the pending cashout requests list with ``Approve'' and ``Reject''
-buttons for Rahul Kumar's Rs.~925.00 request.}
-\caption{Wallet top-up and cashout approval page}
+\shot{wallet.png}{7.5cm}{Wallet top-up and cashout approval page.}
+\caption{Wallet top-up}
 \label{fig:ss-wallet}
 \end{figure}
 
@@ -1857,27 +1825,21 @@ buttons for Rahul Kumar's Rs.~925.00 request.}
 
 \begin{figure}[H]
 \centering
-\begin{minipage}[t]{0.32\textwidth}\centering
-\shot{screenshots/mobile-home.png}{8.5cm}{Mobile \textbf{Home} screen for day D:
-Breakfast card showing ``Closed · You will not be served'' or ``You're opted
-in'' as appropriate, Lunch card with ``Opted out / Tap to opt back in'', Dinner
-card with ``You're opted in / Tap to opt out'', each with the menu items.}
+\begin{minipage}[t]{0.32\textwidth}
+\centering
+\shot{mobile_front.jpeg}{8.5cm}{Home screen.}
 \subcaption*{(a) Home screen}
 \end{minipage}
 \hfill
-\begin{minipage}[t]{0.32\textwidth}\centering
-\shot{screenshots/mobile-optout.png}{8.5cm}{Mobile \textbf{Opt-Out Calendar}:
-``Meal Absence Planner'' with days D+2 to D+4 highlighted, the ``Opt Out (3d)''
-button, and ``Your Scheduled Absences'' listing the days with ``Re-Opt In''
-buttons.}
+\begin{minipage}[t]{0.32\textwidth}
+\centering
+\shot{mobile_opt_out.jpeg}{8.5cm}{Opt-out calendar.}
 \subcaption*{(b) Opt-out calendar}
 \end{minipage}
 \hfill
-\begin{minipage}[t]{0.32\textwidth}\centering
-\shot{screenshots/mobile-wallet.png}{8.5cm}{Mobile \textbf{Wallet} screen: ``Your
-Balance'' Rs.~925.00, the end-of-semester options card (``Cashout Locked Until
-Semester End'' or ``Request Cashout of Rs.~925.00'') and the transaction history
-with ``Top Up'' and ``Meal Deduction'' entries.}
+\begin{minipage}[t]{0.32\textwidth}
+\centering
+\shot{mobile_wallet.jpeg}{8.5cm}{Wallet screen.}
 \subcaption*{(c) Wallet and cashout}
 \end{minipage}
 \caption{Mobile app: home screen with meal cards, opt-out calendar and wallet}

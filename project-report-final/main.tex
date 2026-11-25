@@ -32,6 +32,7 @@
 \usepackage{fancyhdr}
 \usepackage{float}
 \usepackage[labelfont=bf,font=small,labelsep=colon]{caption}
+\usepackage{subcaption}
 \usepackage{tikz}
 \usetikzlibrary{positioning,arrows.meta,shapes.geometric,shapes.multipart,shapes.misc,fit,calc,backgrounds,shadows}
 \usepackage[hidelinks]{hyperref}
@@ -1799,17 +1800,6 @@ box is replaced by the image automatically.
 
 \begin{figure}[H]
 \centering
-\shot{screenshots/web-setup.png}{6.2cm}{Web console \textbf{Setup} page
-(\texttt{/setup}) with the ``Create Super Admin'' form: name, e-mail
-(\texttt{admin@thapar.edu}) and password fields (plus the setup token field if your build shows one), and the
-``Sign in instead'' link. Take it on a fresh database before the first Super
-Admin exists.}
-\caption{One-time Super Admin setup page}
-\label{fig:ss-setup}
-\end{figure}
-
-\begin{figure}[H]
-\centering
 \shot{screenshots/web-login.png}{6.2cm}{Web console \textbf{login page} with the
 e-mail and password fields and the ``Sign In'' button. Optionally show the
 red message ``Students cannot access the staff portal. Please use the mobile
@@ -1863,103 +1853,38 @@ buttons for Rahul Kumar's Rs.~925.00 request.}
 \label{fig:ss-wallet}
 \end{figure}
 
-\begin{figure}[H]
-\centering
-\shot{screenshots/web-menu.png}{7cm}{\textbf{Menu} page: the weekly menu grid of
-Hostel A with Breakfast, Lunch and Dinner rows for each date, dishes entered as
-items, and the edit control used by a Mess Committee member or hostel admin.}
-\caption{Menu planning page}
-\label{fig:ss-menu}
-\end{figure}
-
-\begin{figure}[H]
-\centering
-\shot{screenshots/web-hostels.png}{7cm}{\textbf{Hostels} page signed in as the
-Super Admin: the table with Hostel Name, Associated Mess, Current Fee Plan,
-Semester End and Actions (Edit, Delete), the ``Add Hostel \& Setup'' button,
-and the Hostel Fee Plans form (hostel, semester label, total fee, semester end
-date) with ``Set Semester Fee''.}
-\caption{Hostel and fee-plan management (Super Admin)}
-\label{fig:ss-hostels}
-\end{figure}
-
-\begin{figure}[H]
-\centering
-\shot{screenshots/web-notices.png}{6.5cm}{\textbf{Notices} page: the ``Post a
-Notice'' form (title, message, audience ``Everyone (Public)'') and the notice
-list with ``Water supply off on Sunday'' posted by Neha Gupta with a Warden
-badge, and a Mess Committee notice showing its delete icon.}
-\caption{Hostel notices page}
-\label{fig:ss-notices}
-\end{figure}
-
 \subsubsection{Mobile App}
 
 \begin{figure}[H]
 \centering
-\begin{minipage}[t]{0.48\textwidth}\centering
-\shot{screenshots/mobile-login.png}{8.5cm}{Mobile \textbf{Sign In} screen: SAVOURY
-title, ``Smart Dining \& Mess Management'', ``Welcome back'', e-mail and
-password fields, ``Sign In'' button and ``Register here'' link.}
-\caption{Mobile sign-in screen}\label{fig:ss-m-login}
-\end{minipage}\hfill
-\begin{minipage}[t]{0.48\textwidth}\centering
-\shot{screenshots/mobile-register.png}{8.5cm}{Mobile \textbf{registration}
-screen ``Join Savoury today'' with name, e-mail, password, roll number, room,
-phone and the ``Select Hostel'' list; optionally the ``Registration Failed''
-alert for a non-college e-mail.}
-\caption{Mobile registration screen}\label{fig:ss-m-register}
-\end{minipage}
-\end{figure}
-
-\begin{figure}[H]
-\centering
-\begin{minipage}[t]{0.48\textwidth}\centering
+\begin{minipage}[t]{0.32\textwidth}\centering
 \shot{screenshots/mobile-home.png}{8.5cm}{Mobile \textbf{Home} screen for day D:
 Breakfast card showing ``Closed · You will not be served'' or ``You're opted
 in'' as appropriate, Lunch card with ``Opted out / Tap to opt back in'', Dinner
 card with ``You're opted in / Tap to opt out'', each with the menu items.}
-\caption{Home screen with meal cards}\label{fig:ss-m-home}
-\end{minipage}\hfill
-\begin{minipage}[t]{0.48\textwidth}\centering
+\subcaption*{(a) Home screen}
+\end{minipage}
+\hfill
+\begin{minipage}[t]{0.32\textwidth}\centering
 \shot{screenshots/mobile-optout.png}{8.5cm}{Mobile \textbf{Opt-Out Calendar}:
 ``Meal Absence Planner'' with days D+2 to D+4 highlighted, the ``Opt Out (3d)''
 button, and ``Your Scheduled Absences'' listing the days with ``Re-Opt In''
 buttons.}
-\caption{Opt-out calendar}\label{fig:ss-m-optout}
+\subcaption*{(b) Opt-out calendar}
 \end{minipage}
-\end{figure}
-
-\begin{figure}[H]
-\centering
-\begin{minipage}[t]{0.48\textwidth}\centering
+\hfill
+\begin{minipage}[t]{0.32\textwidth}\centering
 \shot{screenshots/mobile-wallet.png}{8.5cm}{Mobile \textbf{Wallet} screen: ``Your
 Balance'' Rs.~925.00, the end-of-semester options card (``Cashout Locked Until
 Semester End'' or ``Request Cashout of Rs.~925.00'') and the transaction history
 with ``Top Up'' and ``Meal Deduction'' entries.}
-\caption{Wallet and cashout screen}\label{fig:ss-m-wallet}
-\end{minipage}\hfill
-\begin{minipage}[t]{0.48\textwidth}\centering
-\shot{screenshots/mobile-notices.png}{8.5cm}{Mobile \textbf{Notices} screen for
-Rahul Kumar (Hostel A) showing ``Water supply off on Sunday'' with poster name
-and time. A second screenshot for Aman Verma (Hostel B) without the notice can
-be added next to it.}
-\caption{Notices screen}\label{fig:ss-m-notices}
+\subcaption*{(c) Wallet and cashout}
 \end{minipage}
+\caption{Mobile app: home screen with meal cards, opt-out calendar and wallet}
+\label{fig:ss-mobile}
 \end{figure}
 
-\subsubsection{Code}
-
-\begin{figure}[H]
-\centering
-\shot{screenshots/code-cutoff.png}{7.5cm}{Editor screenshot of
-\texttt{code/backend-api/src/utils/cutoff.ts}: the
-\texttt{computeCutoffMoment} function with the \texttt{IST\_OFFSET\_MINUTES}
-constant, the \texttt{isPreviousDay} check and the final
-\texttt{istWallClockAsUtc - IST\_OFFSET\_MINUTES * 60 * 1000} conversion.}
-\caption{Code: IST cutoff computation}
-\label{fig:ss-code-cutoff}
-\end{figure}
+\subsubsection{Code and Output}
 
 \begin{figure}[H]
 \centering
@@ -1976,29 +1901,6 @@ the \texttt{MEAL\_DEDUCTION} insert and the \texttt{P2002} handler.}
 
 \begin{figure}[H]
 \centering
-\shot{screenshots/code-auth-middleware.png}{7.5cm}{Editor screenshot of
-\texttt{code/backend-api/src/middleware/auth.middleware.ts}:
-\texttt{authenticate} (bearer check, \texttt{verifyToken}, reloading the user,
-password-fingerprint comparison, hostel check) and \texttt{authorizeRoles}.}
-\caption{Code: authentication and role middleware}
-\label{fig:ss-code-auth}
-\end{figure}
-
-\begin{figure}[H]
-\centering
-\shot{screenshots/code-roles-cron.png}{7cm}{Two editor panes side by side:
-\texttt{src/constants/roles.ts} with \texttt{HOSTEL\_ADMIN\_ROLES} and
-\texttt{MESS\_STAFF\_MANAGER\_ROLES}, and \texttt{src/services/cron.service.ts}
-with the \texttt{'0 * * * *'} schedule and the \texttt{OPTED\_IN} to
-\texttt{LOCKED} update.}
-\caption{Code: role groups and the hourly booking-lock job}
-\label{fig:ss-code-roles}
-\end{figure}
-
-\subsubsection{Output}
-
-\begin{figure}[H]
-\centering
 \shot{screenshots/out-jest.png}{7.5cm}{Terminal output of \texttt{npm test} in
 \texttt{code/backend-api} with \texttt{--verbose}: the four suites
 \texttt{cutoff.test.ts}, \texttt{security.test.ts}, \texttt{auth.test.ts} and
@@ -2006,49 +1908,6 @@ with the \texttt{'0 * * * *'} schedule and the \texttt{OPTED\_IN} to
 and the summary ``Tests: 30 passed, 30 total''.}
 \caption{Output: backend Jest test run}
 \label{fig:ss-out-jest}
-\end{figure}
-
-\begin{figure}[H]
-\centering
-\shot{screenshots/out-ci.png}{6.5cm}{GitHub Actions run of the \textbf{CI}
-workflow on the final commit of \texttt{main}: the three jobs \texttt{backend},
-\texttt{web} and \texttt{mobile} with green check marks, and the expanded
-backend step ``Migrations apply cleanly and match schema.prisma''.}
-\caption{Output: continuous integration run}
-\label{fig:ss-out-ci}
-\end{figure}
-
-\begin{figure}[H]
-\centering
-\shot{screenshots/out-postman-duplicate.png}{6.5cm}{Postman: \texttt{POST
-/attendance/mark-served} for Rahul Kumar's lunch after he was already served,
-with the response \texttt{200 OK} and body
-\texttt{\{"success": true, "attendance": \{"result": "DUPLICATE"\}\}} (test case
-4.2, step 1).}
-\caption{Output: duplicate serve answered with DUPLICATE}
-\label{fig:ss-out-dup}
-\end{figure}
-
-\begin{figure}[H]
-\centering
-\shot{screenshots/out-postman-rejections.png}{6.5cm}{Postman collage of the
-rejected check-ins from test case 4.2: \texttt{400} ``Student opted out of this
-meal'', \texttt{403} ``You can only serve students from your own hostel'',
-\texttt{422} ``Student has no wallet yet\ldots'', \texttt{400} ``Dinner check-in
-is only open from 19:00 to 21:30 ($\pm$60 min).'' and \texttt{401} ``Unauthorized:
-Missing or invalid token''.}
-\caption{Output: server-side check-in rules}
-\label{fig:ss-out-rej}
-\end{figure}
-
-\begin{figure}[H]
-\centering
-\shot{screenshots/out-render.png}{6cm}{Render dashboard for the
-\texttt{savoury-api} service: the latest deploy marked Live, the build log lines
-of \texttt{prisma migrate deploy} and the start log, and a browser tab showing
-\texttt{GET /health} returning \texttt{\{"status":"ok","timestamp":...\}}.}
-\caption{Output: deployed API and health check}
-\label{fig:ss-out-render}
 \end{figure}
 
 % ============================================================

@@ -4,11 +4,10 @@
 %
 % Compile with pdfLaTeX (Overleaf: Menu > Compiler > pdfLaTeX).
 %
-% Screenshots: every image in this report is a placeholder box that
-% describes what the screenshot must show. Create a folder named
-% "screenshots" next to this file and save each image under the file
-% name printed in its placeholder (e.g. screenshots/web-checkin.png).
-% The box is replaced by the image automatically on the next compile.
+% Screenshots: put these image files next to this .tex file:
+%   webconsole.png, warden headcount.png, user management.png, wallet.png,
+%   mobile_front.jpeg, mobile_opt_out.jpeg, mobile_wallet.jpeg
+% A missing image shows a grey placeholder box instead of an error.
 % ============================================================
 \documentclass[11pt,a4paper]{article}
 
@@ -154,8 +153,7 @@ Cutoff-Driven Booking and Wallet-Based Billing\par}
 \begin{minipage}[t]{0.38\textwidth}
 \raggedleft
 \textbf{Submitted to:}\\[0.5em]
-% TODO: replace with the name of your lab instructor
-[Instructor Name]
+Ms. Anushka
 \end{minipage}
 
 \vfill
@@ -1795,13 +1793,6 @@ The screenshots below were taken from the running application.
 
 \begin{figure}[H]
 \centering
-\shot{rajesh.png}{7.5cm}{Check-In page signed in as Mess Staff.}
-\caption{Staff check-in}
-\label{fig:ss-checkin}
-\end{figure}
-
-\begin{figure}[H]
-\centering
 \shot{warden headcount.png}{7.5cm}{Headcount dashboard signed in as the Warden.}
 \caption{Live headcount dashboard}
 \label{fig:ss-headcount}
@@ -2042,7 +2033,7 @@ AT-30 & balance-verification & Refuses to verify a student from another hostel &
   \rowcolor{gray!15}\textbf{Step} & \textbf{Action} & \textbf{Expected System Response} & \textbf{Pass/ Fail} & \textbf{Comment}\\
   \hline
   \endhead}{%
-  \end{longtable}\vspace{-0.8em}}
+  \end{longtable}\addtocounter{table}{-1}\vspace{-0.8em}}
 \newcommand{\tcpost}[1]{%
   \par\noindent
   \fbox{\parbox{\dimexpr\textwidth-2\fboxsep-2\fboxrule\relax}{\textbf{Post-conditions}\\ #1}}
